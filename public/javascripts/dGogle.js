@@ -3,7 +3,7 @@ var app = angular.module('dGogle',['angular-websocket']);
 app.factory('$streamModule',function streamModuleFactory ($websocket) {
 
   console.log("dentro");
-  var ws = $websocket('ws://localhost:9000/ws');
+  var ws = $websocket('ws://localhost:9001/ws');
   var messages = [];
 
   var append = function(msg){messages.push(msg.data); console.log("got msg - " + msg.data)};

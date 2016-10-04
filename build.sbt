@@ -9,5 +9,8 @@ scalaVersion := "2.11.7"
 libraryDependencies ++= Seq(
   javaJdbc,
   cache,
-  javaWs
+  javaWs,
+  "com.typesafe.akka" %% "akka-cluster" % "2.4.11",
+  "com.typesafe.akka" %% "akka-cluster-tools" % "2.4.11"
 )
+
