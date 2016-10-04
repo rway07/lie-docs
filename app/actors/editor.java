@@ -16,6 +16,8 @@ public class editor extends UntypedActor {
     public static Props props(ActorRef out) {
 
 
+        //luca puruuuuu
+
         //return Akka.system().actorOf(Props.create(editor.class, out),"editor")
         return Props.create(editor.class, out);
     }
