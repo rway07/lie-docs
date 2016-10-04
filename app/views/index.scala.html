@@ -1,0 +1,22 @@
+@(title: String,customHead : String,filename:String)
+
+@header(title,customHead)
+
+    <body>
+
+        @navbar(filename)
+
+        <div class="container">
+           <p ng-repeat="elem in data">{{elem}}</p>
+        </div>
+
+
+
+          <input ng-model="input" name="input" type="text" />
+          <input ng-click="send()" type="submit" id="submit" value="Submit" />
+
+
+
+    </body>
+
+@footer()
