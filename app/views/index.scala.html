@@ -10,24 +10,12 @@
            <p ng-repeat="elem in data">{{elem}}</p>
         </div>
 
-
-
-
-
-          <input ng-model="input" name="input" type="text" />
-          <input ng-click="send()" type="submit" id="submit" value="Submit" />
-
-        <script type="text/javascript">
-
-            console.log($("#page tr"));
-
-        </script>
+        <input ng-model="input" name="input" type="text" />
+        <input ng-click="send()" type="submit" id="submit" value="Submit" />
 
         <div class="container">
             <table id="page">
-                <tr><td contenteditable="true">1</td></tr>
-                <tr><td contenteditable="true">2</td></tr>
-                <tr><td contenteditable="true">3</td></tr>
+                <tr _index="0" _subindex="0"><td contenteditable="true">1</td></tr>
             </table>
         </div>
 

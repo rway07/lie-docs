@@ -11,6 +11,7 @@ libraryDependencies ++= Seq(
   cache,
   javaWs,
   "com.typesafe.akka" %% "akka-cluster" % "2.4.11",
-  "com.typesafe.akka" %% "akka-cluster-tools" % "2.4.11"
+  "com.typesafe.akka" %% "akka-cluster-tools" % "2.4.11",
+  "mysql" % "mysql-connector-java" % "5.1.36"
 )
 

@@ -7,8 +7,6 @@ import play.mvc.WebSocket;
 
 public class WebsocketController {
 
-    public LegacyWebSocket<String> ws() {
-        return WebSocket.withActor(editor::props);
-    }
+    public LegacyWebSocket<String> ws() {return WebSocket.withActor(editor::props);}
 
 }
