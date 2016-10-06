@@ -2,7 +2,6 @@ var app = angular.module('dGogle',['angular-websocket']);
 
 app.factory('$streamModule',function streamModuleFactory ($websocket) {
 
-  console.log("dentro");
   var ws = $websocket('ws://localhost:9001/ws');
   var messages = [];
 
@@ -38,27 +37,28 @@ app.controller('filenameCtrl',function($scope){
 
 $.fn.focusEditable = function(col)
 {
+  var min = function(a,b){return (a<=b)?a:b;}
+
   var c = (typeof col === 'undefined')?0:col;
   var currRow = $(this).children("td");
+  var currTextNode = currRow.contents();
+
   var s = window.getSelection();
   var r = document.createRange();
 
-  console.log("sono qui"+currRow.text());
-
   if(c != 0){
-    r.setStart(currRow, c);
-    r.setEnd(currRow, c);
+    r.setStart(currTextNode.get(0), min(c,currRow.text().length));
+    r.setEnd(currTextNode.get(0), min(c,currRow.text().length));
     s.removeAllRanges();
     s.addRange(r);
   } else {
-     console.log(currRow.text().length);
+
      if(currRow.text().length == 0){
-       console.log("enrico dentro");
+
        currRow.get(0).innerHTML = '\u00a0';
        currRow.get(0).focus();
        document.execCommand('delete', false, null);
      }else{
-        console.log(currRow);
         currRow.get(0).focus();
      }
   }
@@ -71,21 +71,25 @@ $.fn.documentize = function(){
               var currRow = $(window.getSelection().anchorNode).parent().parent();
               var row = currRow.index();
 
-              console.log("riga: " + row + "; col: " + col);
+              //console.log("riga: " + row + "; col: " + col);
 
               if(e.type == "keyup" || e.type == "keydown")
               {
                  if(e.type == "keyup")
                    switch(e.keyCode){
-                     case 13:
-                     case 38:
-                     case 40: e.preventDefault();
+
+                     case 8:  {e.preventDefault(); break;}
+                     case 13: {e.preventDefault(); break;}
+                     case 38: { if($(currRow).is(":first-child")) return; currRow.prev().focusEditable(col); break;} //arrow up
+                     case 40: { if($(currRow).is(":last-child")) return; currRow.next().focusEditable(col); break;} //arrow down
                      default: return;
+
                    }
 
                  if(e.type == "keydown")
                    switch(e.keyCode){
-                      case 13:{ //enter
+                      case 13:
+                      { //enter
                         e.preventDefault();
 
                         if(currRow.text() == "" || currRow.text().length == col)
@@ -102,15 +106,15 @@ $.fn.documentize = function(){
                                .on('keydown keyup mouseup',function (e){fn(e);})
                                .focusEditable();
                         }
+                        return;
                       }
-                      case 38:{ //arrow up
-                        currRow.prev().focusEditable();
-
+                      case 8:
+                      {
+                        
+                        return;
                       }
-                      case 40:{
-                        currRow.next().focusEditable();
-                      }
-
+                      case 38:
+                      case 40: {e.preventDefault(); return; }
                       default: return;
                    }
 
