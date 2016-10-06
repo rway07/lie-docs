@@ -110,7 +110,7 @@ $.fn.documentize = function(){
                       }
                       case 8:
                       {
-                        
+
                         return;
                       }
                       case 38:
