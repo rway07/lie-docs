@@ -36,52 +36,97 @@ app.controller('filenameCtrl',function($scope){
   $scope.filename="Unnamed Document";
 });
 
+$.fn.focusEditable = function(col)
+{
+  var c = (typeof col === 'undefined')?0:col;
+  var currRow = $(this).children("td");
+  var s = window.getSelection();
+  var r = document.createRange();
+
+  console.log("sono qui"+currRow.text());
+
+  if(c != 0){
+    r.setStart(currRow, c);
+    r.setEnd(currRow, c);
+    s.removeAllRanges();
+    s.addRange(r);
+  } else {
+     console.log(currRow.text().length);
+     if(currRow.text().length == 0){
+       console.log("enrico dentro");
+       currRow.get(0).innerHTML = '\u00a0';
+       currRow.get(0).focus();
+       document.execCommand('delete', false, null);
+     }else{
+        console.log(currRow);
+        currRow.get(0).focus();
+     }
+  }
+}
+
+$.fn.documentize = function(){
+
+  var fn = function(e){
+              var col = ($(window.getSelection().anchorNode).is($(this)))?0:window.getSelection().anchorOffset;
+              var currRow = $(window.getSelection().anchorNode).parent().parent();
+              var row = currRow.index();
+
+              console.log("riga: " + row + "; col: " + col);
+
+              if(e.type == "keyup" || e.type == "keydown")
+              {
+                 if(e.type == "keyup")
+                   switch(e.keyCode){
+                     case 13:
+                     case 38:
+                     case 40: e.preventDefault();
+                     default: return;
+                   }
+
+                 if(e.type == "keydown")
+                   switch(e.keyCode){
+                      case 13:{ //enter
+                        e.preventDefault();
+
+                        if(currRow.text() == "" || currRow.text().length == col)
+                            $("<tr><td contenteditable=\"true\"></td></tr>")
+                               .insertAfter(currRow)
+                               .on('keydown keyup mouseup',function (e){fn(e);})
+                               .focusEditable();
+                        else{
+                            var text =  currRow.text();
+                            currRow.children().text(text.substr(0,col));
+
+                            $("<tr><td contenteditable=\"true\">"+text.substr(col)+"</td></tr>")
+                               .insertAfter(currRow)
+                               .on('keydown keyup mouseup',function (e){fn(e);})
+                               .focusEditable();
+                        }
+                      }
+                      case 38:{ //arrow up
+                        currRow.prev().focusEditable();
+
+                      }
+                      case 40:{
+                        currRow.next().focusEditable();
+                      }
+
+                      default: return;
+                   }
+
+
+              }
+  };
+
+  $(this).find("td").on('keydown keyup mouseup',function (e){fn(e);});
+};
+
 $(document).ready(function(){
 
-    $("#editable").on('keydown keyup mousedown mouseup',function(e){
-
-        if($(window.getSelection().anchorNode).is($(this))){
-        console.log(0);
-        }else{
-        console.log(window.getSelection().anchorOffset);
-        }
-        });
-
-$.fn.caret = function (begin, end)
-    {
-        if (this.length == 0) return;
-        if (typeof begin == 'number')
-        {
-            end = (typeof end == 'number') ? end : begin;
-            return this.each(function ()
-            {
-                if (this.setSelectionRange)
-                {
-                    this.setSelectionRange(begin, end);
-                } else if (this.createTextRange)
-                {
-                    var range = this.createTextRange();
-                    range.collapse(true);
-                    range.moveEnd('character', end);
-                    range.moveStart('character', begin);
-                    try { range.select(); } catch (ex) { }
-                }
-            });
-        } else
-        {
-            if (this[0].setSelectionRange)
-            {
-                begin = this[0].selectionStart;
-                end = this[0].selectionEnd;
-            } else if (document.selection && document.selection.createRange)
-            {
-                var range = document.selection.createRange();
-                begin = 0 - range.duplicate().moveStart('character', -100000);
-                end = begin + range.text.length;
-            }
-            return { begin: begin, end: end };
-        }
-    }
+      $("#page").documentize();
 
 });
+
+
+
 

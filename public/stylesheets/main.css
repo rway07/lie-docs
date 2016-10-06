@@ -1,3 +1,6 @@
  body {
     padding-top: 70px;
   }
+
+  [contenteditable]:focus { outline: 0px solid transparent; }
+  tr {min-height:5px;}
