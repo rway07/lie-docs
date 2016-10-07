@@ -5,20 +5,21 @@ import akka.actor.*;
 import akka.event.Logging;
 import akka.event.LoggingAdapter;
 import akka.cluster.pubsub.*;
-import play.Logger;
+import com.google.inject.Inject;
+import com.sun.rowset.internal.Row;
 import scala.concurrent.Future;
 
+
+import play.Logger;
+
 import java.sql.Connection;
-import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.Statement;
 import java.util.concurrent.Callable;
 import static akka.dispatch.Futures.future;
+import static play.db.DB.getConnection;
 
-import javax.inject.Inject;
-import javax.xml.validation.Schema;
-
-import play.db.NamedDatabase;
-import play.db.Database;
+import play.db.*;
 
 
 
@@ -29,7 +30,8 @@ public class editor extends UntypedActor {
     private final ActorSystem system = getContext().system();
     private final ActorRef socket;
     private final ActorRef router;
-    private @NamedDatabase("bechini") Database db;
+    private DB db;
+
 
     LoggingAdapter log = Logging.getLogger(getContext().system(), this);
 
@@ -37,6 +39,7 @@ public class editor extends UntypedActor {
         Logger.debug("static editor");
         return Props.create(editor.class, out);
     }
+
 
     public editor(ActorRef out) {
 
@@ -63,20 +66,17 @@ public class editor extends UntypedActor {
           Future<String> f = future(new Callable<String>() {
                 public String call() {
 
-                    try (Connection c = db.getConnection()) {
-                        String sql = "select name from projects";
+                    Connection conn =  db.getConnection();
+                    try{
+                        Statement stm = conn.createStatement();
+                        ResultSet r = stm.executeQuery("select name from projects");
+                        r.first();
+                        
+                        Logger.info("enrico " + r.getString("name"));
 
-                        try (PreparedStatement stmt = c.prepareStatement(sql);
-                             ResultSet rs = stmt.executeQuery()) {
-
-                            while (rs.next()) {
-                                log.info("PROVA DB: " + rs.getString("name"));
-                            }
-                        }
                     }catch (Exception e){
-                        log.error(e.toString());
+                        Logger.error(e.getMessage() + ":" + e.getCause());
                     }
-
 
                     return "Hello" + "World";
 
