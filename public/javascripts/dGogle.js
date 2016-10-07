@@ -5,9 +5,6 @@ app.factory('$streamModule',function streamModuleFactory ($websocket) {
   var ws = $websocket('ws://localhost:9001/ws');
   var messages = [];
 
-  var append = function(msg){messages.push(msg.data); console.log("got msg - " + msg.data)};
-  ws.onMessage(append);
-
   var dataStreamClass = {
     messages : messages,
     send: function(msg){console.log("invio"); ws.send(msg); console.log("sending: " + msg);},
@@ -21,16 +18,51 @@ app.factory('$streamModule',function streamModuleFactory ($websocket) {
 
 app.run(['$rootScope','$streamModule',function(scope,stream){
 
-  window.callbackRecall = []; //id - jquery istance // creazione
+   window.viewFn = [];
+   window.viewFn['execEnter1'] = function(param){
+                                var currElem = $('tr:eq('+param.r+')');
+                                var elem = $(param.elem);
+
+                                elem.insertAfter(currElem)
+                                    .on('keydown keyup mouseup',function (e){$.fn.fn(e,stream.send);})
+                                    .attr("_subindex",param._subindex)
+                                    .attr("_index",param._index);
+
+                                if(param.author == "me") elem.focusEditable();
+
+                              };
+
+   window.viewFn['execEnter2'] = function(param){
+                                  var currRow = $('tr:eq('+param.r+')');
+                                  var elem = $(param.elem);
+                                  var text = currRow.text();
+
+                                  var text =  currRow.text();
+                                  currRow.children().text(text.substr(0,param.c));
+
+                                  elem.children().text(text.substr(param.c));
+                                  elem.insertAfter(currRow)
+                                      .on('keydown keyup mouseup',function (e){$.fn.fn(e,stream.send);})
+                                      .attr("_subindex",param._subindex)
+                                      .attr("_index",param._index);
+
+                                  if(param.author == "me")elem.focusEditable();
+
+                               };
+
   $("#page").documentize(stream.send);
         //(action,prevIndex,prevSubIndex,nextIndex,nextSubIndex)
   scope.data = ['a','b'];
   scope.input = "";
 
-  var appendResponse = function(msg){
-    scope.data.push(msg.data);
+  var exec = function(resp){
+    console.log(resp.data);
+    data = JSON.parse(resp.data);
+    window.viewFn[data.fn](data);
   }
-  stream.registerCallback(appendResponse);
+
+  stream.registerCallback(exec);
+
   scope.send = function(){stream.send(scope.input);}
 
 }]);
@@ -70,31 +102,7 @@ $.fn.focusEditable = function(col)
   }
 }
 
-$.fn.documentize = function(callBackChange){
-
-  var indices = function(currTr,action,instance,prev,next){
-
-    addPrev = (typeof prev == 'undefined' || prev == true)?true:false;
-    addNext = (typeof next == 'undefined' || next == true)?true:false;
-
-    domCurr = currTr.get(0);
-    domNext = (currTr.is(":last-child"))?null:currTr.next().get(0);
-    console.log(domNext);
-
-    index =  window.callbackRecall.length;
-    window.callbackRecall[index] = instance;
-
-    return {
-      'prevIndex': (typeof domCurr != 'undefined' && addPrev)?currTr.attr('_index'):"null",
-      'prevSubIndex': (typeof domCurr != 'undefined' && addPrev)?currTr.attr('_subindex'):"null",
-      'nextIndex': (domNext != null && addNext)?$(domNext).attr('_index'):"null",
-      'nextSubIndex':(domNext != null && addNext)?$(domNext).attr('_subindex'):"null",
-      'idRecall' : index,
-      'action' : action
-    };
-  }
-
-  var fn = function(e){
+$.fn.fn = function(e,callBackChange){
               var col = ($(window.getSelection().anchorNode).is($(this)))?0:window.getSelection().anchorOffset;
               var currRow = $(window.getSelection().anchorNode).parent().parent();
               var row = currRow.index();
@@ -121,28 +129,29 @@ $.fn.documentize = function(callBackChange){
                       { //enter
                         e.preventDefault();
 
-
-
                         if(currRow.text() == "" || currRow.text().length == col)
                         {
-
-                            var newElem = $("<tr><td contenteditable=\"true\"></td></tr>");
-                            callBackChange(indices(currRow,'add',newElem));
-
-                            newElem.insertAfter(currRow)
-                                   .on('keydown keyup mouseup',function (e){fn(e);})
-                                   .focusEditable();
+                            var exec131 = {
+                               fn: "execEnter1",
+                               r: row,
+                               c: col,
+                               elem: "<tr><td contenteditable=\"true\"></td></tr>",
+                               author:"me",
+                            };
+                            callBackChange($.fn.indices(currRow,'addRow',exec131));
                         }
                         else{
-                            var text =  currRow.text();
-                            currRow.children().text(text.substr(0,col));
 
-                            var newElem = $("<tr><td contenteditable=\"true\">"+text.substr(col)+"</td></tr>");
-                            callBackChange(indices(currRow,'add',newElem));
+                            var exec132 = {
+                               fn: "execEnter2",
+                               r:row,
+                               c: col,
+                               author:"me",
+                               elem:"<tr><td contenteditable=\"true\"></td></tr>"
+                            };
 
-                            newElem.insertAfter(currRow)
-                               .on('keydown keyup mouseup',function (e){fn(e);})
-                               .focusEditable();
+                            callBackChange($.fn.indices(currRow,'addRow',exec132));
+
                         }
                         return;
                       }
@@ -157,7 +166,7 @@ $.fn.documentize = function(callBackChange){
                         var cursorPos = prevRow.children("td").text().length;
                         var text = currTr.children("td").text();
 
-                        callBackChange(indices(prevRow,'remove',null,false,true));
+                        callBackChange($.fn.indices(prevRow,'remove',null,false,true));
 
                         prevRow.children("td").text(prevRow.children("td").text() + text);
                         console.log(prevRow.children("td").text());
@@ -181,7 +190,7 @@ $.fn.documentize = function(callBackChange){
 
                         currTr.children("td").text(currTr.children("td").text() + text);
 
-                        callBackChange(indices(currRow,'remove',null,false,true));
+                        callBackChange($.fn.indices(currRow,'remove',null,false,true));
 
                         nextRow.remove();
                         currRow.focusEditable(cursorPos);
@@ -198,7 +207,29 @@ $.fn.documentize = function(callBackChange){
               }
   };
 
-  $(this).find("td").on('keydown keyup mouseup',function (e){fn(e);});
+$.fn.indices = function(currTr,action,func,prev,next){
+
+                   addPrev = (typeof prev == 'undefined' || prev == true)?true:false;
+                   addNext = (typeof next == 'undefined' || next == true)?true:false;
+
+                   domCurr = currTr.get(0);
+                   domNext = (currTr.is(":last-child"))?null:currTr.next().get(0);
+
+                   func['prevIndex'] = (typeof domCurr != 'undefined' && addPrev)?currTr.attr('_index'):"null";
+                   func['prevSubIndex']= (typeof domCurr != 'undefined' && addPrev)?currTr.attr('_subindex'):"null";
+                   func['nextIndex']= (domNext != null && addNext)?$(domNext).attr('_index'):"null";
+                   func['nextSubIndex']=(domNext != null && addNext)?$(domNext).attr('_subindex'):"null";
+                   func['action'] = action;
+
+                   console.log(JSON.stringify(func));
+                   return JSON.stringify(func);
+
+                 }
+
+$.fn.documentize = function(callBackChange){
+
+  $(this).find("td").on('keydown keyup mouseup',function (e){$.fn.fn(e,callBackChange);});
+
 };
 
 

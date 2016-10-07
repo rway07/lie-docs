@@ -44,18 +44,37 @@ public class editor extends UntypedActor {
           socket.tell(((documentChanges)message).getMsg(),self());
         }else if (message instanceof String) {
 
+
+            Logger.error("got: " + (String)message);
             jsonUtil jsonMsg = new jsonUtil((String)message);
+
+            //asking db for parameter
             dbUtil   db = new dbUtil(system);
 
             Logger.error("sono quiiiiiiiiiii: " + (String)jsonMsg.get("action"));
 
             Future<ResultSet> f = db.q("select * from projects");
 
+            //******************************
+
             f.onSuccess(new OnSuccess<ResultSet>(){
-              public void onSuccess(ResultSet result) {
-                  router.tell(new DistributedPubSubMediator.Publish("content", new documentChanges(message)), getSelf());
-              }
+                public void onSuccess(ResultSet result) {
+
+                    //append something to json
+                    //  ....
+                    jsonMsg.put("_subindex","0");
+                    jsonMsg.put("_index","0");
+
+                    Logger.warn("dico a tutti:" + jsonMsg.toString());
+                    //publish message
+                    router.tell(new DistributedPubSubMediator.Publish("content", new documentChanges(jsonMsg.toString()
+                    )), getSelf());
+                }
             },system.dispatcher());
+
+
+
+
 
         }
         else

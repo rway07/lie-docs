@@ -23,10 +23,9 @@ public class jsonUtil {
       }
     }
 
+    public void put(String key,Object value){o.put(key,value);}
     public Object get(String key){
         return (Object)o.get(key);
     }
-
-
-
+    public String toString(){return o.toJSONString();}
 }
