@@ -37,47 +37,71 @@ public class editor extends UntypedActor {
     }
 
     @Override
-    public void onReceive(Object message) throws Exception {
+    public void onReceive(Object message) {
 
-        if (message instanceof DistributedPubSubMediator.SubscribeAck);
-        else if (message instanceof documentChanges ){
-          socket.tell(((documentChanges)message).getMsg(),self());
-        }else if (message instanceof String) {
+        try{
+            if (message instanceof DistributedPubSubMediator.SubscribeAck);
+            else if (message instanceof documentChanges ){
+                socket.tell(((documentChanges)message).getMsg(),self());
+            }else if (message instanceof String) {
 
 
-            Logger.error("got: " + (String)message);
-            jsonUtil jsonMsg = new jsonUtil((String)message);
+                Logger.info("GOT: " + (String)message);
+                jsonUtil jsonMsg = new jsonUtil((String)message);
 
-            //asking db for parameter
-            dbUtil   db = new dbUtil(system);
+                //asking db for parameter
+                //dbUtil   db = new dbUtil(system);
 
-            Logger.error("sono quiiiiiiiiiii: " + (String)jsonMsg.get("action"));
+                switch((String)jsonMsg.get("action"))
+                {
+                    case "addChar":
+                    {
+                        jsonMsg.put("rd",((Long)jsonMsg.get("r")).toString());
+                        Long pos = (Long)jsonMsg.get("c");
+                        pos +=1;
+                        jsonMsg.put("cd",pos.toString());
+                        break;
+                    }
+                    case "removeRow":
+                    case "addRow":
+                    {
+                        jsonMsg.put("_subindex","0");
+                        jsonMsg.put("_index","0");
+                        break;
+                    }
+                }
 
-            Future<ResultSet> f = db.q("select * from projects");
 
-            //******************************
 
+                //publish message
+
+                //Future<ResultSet> f = db.q("select * from projects");
+
+                Logger.warn("dico a tutti:" + jsonMsg.toString());
+                router.tell(new DistributedPubSubMediator.Publish("content", new documentChanges(jsonMsg.toString())),getSelf());
+
+                //******************************
+            /*
             f.onSuccess(new OnSuccess<ResultSet>(){
                 public void onSuccess(ResultSet result) {
 
                     //append something to json
                     //  ....
-                    jsonMsg.put("_subindex","0");
-                    jsonMsg.put("_index","0");
 
-                    Logger.warn("dico a tutti:" + jsonMsg.toString());
-                    //publish message
-                    router.tell(new DistributedPubSubMediator.Publish("content", new documentChanges(jsonMsg.toString()
                     )), getSelf());
                 }
             },system.dispatcher());
+            */
 
 
 
 
-
+            }
+            else
+                unhandled(message);
+        }catch (Exception e){
+          Logger.error(e.getMessage() + " - " + e.getCause());
         }
-        else
-          unhandled(message);
+
     }
 }

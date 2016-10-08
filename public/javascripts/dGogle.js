@@ -27,7 +27,8 @@ app.run(['$rootScope','$streamModule',function(scope,stream){
         var elem = $(param.elem);
 
         elem.insertAfter(currElem)
-            .on('keydown keyup mouseup',function (e){$.fn.fn(e,stream.send);})
+            .on('keydown keyup mouseup keypress',function (e){$.fn.fn(e,stream.send);})
+            .on('keypress',function (e){$.fn.streamChar(e,stream.send);})
             .attr("_subindex",param._subindex)
             .attr("_index",param._index);
 
@@ -104,6 +105,11 @@ app.run(['$rootScope','$streamModule',function(scope,stream){
         $($('tr:eq('+parseInt(window.row-1)+')').get(0)).focusEditable((parseInt(window.col)));
       }
    }
+   window.viewFn['execAddChar']=function(param){
+     var currRow = $('tr:eq('+param.rd+')');
+     currRow.children("td").text(currRow.children("td").text().appendAtIndex(param.chr,param.cd))
+     $(currRow.get(0)).focusEditable(param.cd+1);
+   }
 
   $("#page").documentize(stream.send);
 
@@ -116,6 +122,11 @@ app.run(['$rootScope','$streamModule',function(scope,stream){
   stream.registerCallback(exec);
 
 }]);
+
+String.prototype.appendAtIndex=function(char,index)
+{
+  return [this.slice(0, index), char, this.slice(index)].join('');
+}
 
 String.prototype.makeid = function(len)
 {
@@ -173,6 +184,8 @@ $.fn.fn = function(e,notifyChange){
   var col = ($(window.getSelection().anchorNode).is($(this)))?0:window.getSelection().anchorOffset;
   var currRow = $(window.getSelection().anchorNode).parent().parent();
   var row = currRow.index();
+
+  var streamableChar = false;
 
   window.row = row;
   window.col = col;
@@ -265,10 +278,37 @@ $.fn.fn = function(e,notifyChange){
           }
           case 38:
           case 40: {e.preventDefault(); return; }
-          default: return;
+          default:
+            return
+
+
        }
   }
+
 };
+
+$.fn.streamChar = function(e,notifyChange)
+{
+  if(e.type=="keypress" && e.which !== 0 && !e.ctrlKey && !e.metaKey && !e.altKey)
+  {
+    e.preventDefault();
+
+    var char = String.fromCharCode(e.keyCode);
+
+    var paramAddChar = {
+      fn: "execAddChar",
+      r: row,
+      c: col,
+      author:window.editorID,
+      chr: char
+    };
+    var currRow = $(window.getSelection().anchorNode).parent().parent();
+    notifyChange($.fn.indices(currRow,'addChar',paramAddChar,true));
+
+    return;
+  }
+
+}
 
 $.fn.indices = function(currTr,action,func,prev,next) {
 
@@ -291,7 +331,7 @@ $.fn.indices = function(currTr,action,func,prev,next) {
 $.fn.documentize = function(callBackChange){
 
   $(this).find("td").on('keydown keyup mouseup',function (e){$.fn.fn(e,callBackChange);});
-
+  $(this).find("td").on('keypress',function (e){$.fn.streamChar(e,callBackChange);});
 };
 
 
