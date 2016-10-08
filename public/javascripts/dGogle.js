@@ -18,59 +18,126 @@ app.factory('$streamModule',function streamModuleFactory ($websocket) {
 
 app.run(['$rootScope','$streamModule',function(scope,stream){
 
+   window.editorID = String.prototype.makeid(128);
+   console.log(window.editorID);
    window.viewFn = [];
    window.viewFn['execEnter1'] = function(param){
-                                var currElem = $('tr:eq('+param.r+')');
-                                var elem = $(param.elem);
 
-                                elem.insertAfter(currElem)
-                                    .on('keydown keyup mouseup',function (e){$.fn.fn(e,stream.send);})
-                                    .attr("_subindex",param._subindex)
-                                    .attr("_index",param._index);
+        var currElem = $('tr:eq('+param.r+')');
+        var elem = $(param.elem);
 
-                                if(param.author == "me") elem.focusEditable();
+        elem.insertAfter(currElem)
+            .on('keydown keyup mouseup',function (e){$.fn.fn(e,stream.send);})
+            .attr("_subindex",param._subindex)
+            .attr("_index",param._index);
 
-                              };
+        if(param.author == window.editorID)
+          elem.focusEditable();
+        else if(window.row > param.r) {
+            $($('tr:eq('+(window.row+1)+')').get(0)).focusEditable(window.col);
+        }
+   };
 
    window.viewFn['execEnter2'] = function(param){
-                                  var currRow = $('tr:eq('+param.r+')');
-                                  var elem = $(param.elem);
-                                  var text = currRow.text();
 
-                                  var text =  currRow.text();
-                                  currRow.children().text(text.substr(0,param.c));
+      var currRow = $('tr:eq('+param.r+')');
+      var elem = $(param.elem);
+      var text = currRow.text();
 
-                                  elem.children().text(text.substr(param.c));
-                                  elem.insertAfter(currRow)
-                                      .on('keydown keyup mouseup',function (e){$.fn.fn(e,stream.send);})
-                                      .attr("_subindex",param._subindex)
-                                      .attr("_index",param._index);
+      var text =  currRow.text();
+      currRow.children().text(text.substr(0,param.c));
 
-                                  if(param.author == "me")elem.focusEditable();
+      elem.children().text(text.substr(param.c));
+      elem.insertAfter(currRow)
+          .on('keydown keyup mouseup',function (e){$.fn.fn(e,stream.send);})
+          .attr("_subindex",param._subindex)
+          .attr("_index",param._index);
 
-                               };
+      if(param.author == window.editorID)
+        elem.focusEditable();
+      else if(window.col >= param.c && window.row == param.r){
+
+        console.log("non author change pos: new pos| r: " + (parseInt(window.row)+1) + " c: " + (parseInt(window.col) - parseInt(param.c)));
+        row = $('tr:eq('+(parseInt(window.row)+1)+')').get(0);
+        idx = parseInt(window.col - param.c); 
+        $(row).focusEditable(idx);
+      } else if(window.row > param.r ){
+        $($('tr:eq('+(parseInt(window.row)+1)+')').get(0)).focusEditable((parseInt(window.col)));
+      }
+   };
+
+   window.viewFn["execBackspace"] = function(param){
+
+      var currRow = $($('tr:eq('+(parseInt(param.r))+')').get(0));
+      var prevRow = $($('tr:eq('+(parseInt(param.r)-1)+')').get(0));
+      var cursorPos = prevRow.children("td").text().length;
+      var text = currRow.children("td").text();
+
+      prevRow.children("td").text(prevRow.children("td").text() + text);
+      currRow.remove();
+
+      if(param.author == window.editorID)
+        prevRow.focusEditable(cursorPos);
+      else if(window.row == param.r && window.col >= param.c){
+        var row =$('tr:eq('+(parseInt(window.row)-1)+')').get(0); 
+        $(row).focusEditable(parseInt(window.col + cursorPos));
+      }else if(window.row > param.r){
+       $($('tr:eq('+parseInt(window.row-1)+')').get(0)).focusEditable((parseInt(window.col)));
+      }
+   }
+
+   window.viewFn['execCanc'] = function(param){
+
+      var nextRow = $($('tr:eq('+(parseInt(param.r+1))+')').get(0));
+      var currRow = $($('tr:eq('+(parseInt(param.r))+')').get(0));
+      var cursorPos = currRow.children("td").text().length;
+      var text = nextRow.children("td").text();
+
+      currRow.children("td").text(currRow.children("td").text() + text);
+      nextRow.remove();
+
+      if(window.editorID == param.author){
+        currRow.focusEditable(cursorPos);
+      } else if(window.row == param.r){
+        $($('tr:eq('+parseInt(window.row)+')').get(0)).focusEditable((parseInt(window.col)));
+      } else if(window.row > param.r) {
+        $($('tr:eq('+parseInt(window.row-1)+')').get(0)).focusEditable((parseInt(window.col)));
+      }
+   }
 
   $("#page").documentize(stream.send);
-        //(action,prevIndex,prevSubIndex,nextIndex,nextSubIndex)
-  scope.data = ['a','b'];
-  scope.input = "";
 
   var exec = function(resp){
-    console.log(resp.data);
+    console.log("Server Say: " + resp.data);
     data = JSON.parse(resp.data);
     window.viewFn[data.fn](data);
   }
 
   stream.registerCallback(exec);
 
-  scope.send = function(){stream.send(scope.input);}
-
 }]);
 
-app.controller('filenameCtrl',function($scope){
-  $scope.filename="Unnamed Document";
-});
+String.prototype.makeid = function(len)
+{
+    var text = "";
+    var possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
 
+    for( var i=0; i < len; i++ )
+        text += possible.charAt(Math.floor(Math.random() * possible.length));
+
+    return text;
+}
+
+String.prototype.hashCode = function() {
+  var hash = 0, i, chr, len;
+  if (this.length === 0) return hash;
+  for (i = 0, len = this.length; i < len; i++) {
+    chr   = this.charCodeAt(i);
+    hash  = ((hash << 5) - hash) + chr;
+    hash |= 0; // Convert to 32bit integer
+  }
+  return hash;
+};
 
 $.fn.focusEditable = function(col)
 {
@@ -84,7 +151,6 @@ $.fn.focusEditable = function(col)
   var r = document.createRange();
 
   if(c != 0){
-    console.log(currRow.text());
     var actualLength =  currRow.text().length;
     r.setStart(currTextNode.get(0), min(c,actualLength));
     r.setEnd(currTextNode.get(0), min(c,actualLength));
@@ -102,129 +168,125 @@ $.fn.focusEditable = function(col)
   }
 }
 
-$.fn.fn = function(e,callBackChange){
-              var col = ($(window.getSelection().anchorNode).is($(this)))?0:window.getSelection().anchorOffset;
-              var currRow = $(window.getSelection().anchorNode).parent().parent();
-              var row = currRow.index();
+$.fn.fn = function(e,notifyChange){
 
-              //console.log("riga: " + row + "; col: " + col);
+  var col = ($(window.getSelection().anchorNode).is($(this)))?0:window.getSelection().anchorOffset;
+  var currRow = $(window.getSelection().anchorNode).parent().parent();
+  var row = currRow.index();
 
-              if(e.type == "keyup" || e.type == "keydown")
-              {
-                 if(e.type == "keyup")
-                   switch(e.keyCode){
+  window.row = row;
+  window.col = col;
 
-                     case 8:  {e.preventDefault(); break;} //backspace
-                     case 13: {e.preventDefault(); break;} // enter
-                     case 46: {e.preventDefault(); break;} // canc
-                     case 38: { if($(currRow).is(":first-child")) return; currRow.prev().focusEditable(col); break;} //arrow up
-                     case 40: { if($(currRow).is(":last-child")) return; currRow.next().focusEditable(col); break;} //arrow down
-                     default: return;
+  if(e.type == "keyup" || e.type == "keydown")
+  {
+     if(e.type == "keyup")
+       switch(e.keyCode){
 
-                   }
+         case 8:  {e.preventDefault(); break;} //backspace
+         case 13: {e.preventDefault(); break;} // enter
+         case 46: {e.preventDefault(); break;} // canc
+         case 38: { if($(currRow).is(":first-child")) return; currRow.prev().focusEditable(col); break;} //arrow up
+         case 40: { if($(currRow).is(":last-child")) return; currRow.next().focusEditable(col); break;} //arrow down
+         default: return;
 
-                 if(e.type == "keydown")
-                   switch(e.keyCode){
-                      case 13:
-                      { //enter
-                        e.preventDefault();
+       }
 
-                        if(currRow.text() == "" || currRow.text().length == col)
-                        {
-                            var exec131 = {
-                               fn: "execEnter1",
-                               r: row,
-                               c: col,
-                               elem: "<tr><td contenteditable=\"true\"></td></tr>",
-                               author:"me",
-                            };
-                            callBackChange($.fn.indices(currRow,'addRow',exec131));
-                        }
-                        else{
+     if(e.type == "keydown")
+       switch(e.keyCode){
+          case 13:
+          { //enter
+            e.preventDefault();
 
-                            var exec132 = {
-                               fn: "execEnter2",
-                               r:row,
-                               c: col,
-                               author:"me",
-                               elem:"<tr><td contenteditable=\"true\"></td></tr>"
-                            };
+            if(currRow.text() == "" || currRow.text().length == col)
+            {
+                var paramEnter1 = {
+                   fn: "execEnter1",
+                   r: row,
+                   c: col,
+                   elem: "<tr><td contenteditable=\"true\"></td></tr>",
+                   author:window.editorID,
+                };
+                notifyChange($.fn.indices(currRow,'addRow',paramEnter1));
+            }
+            else{
 
-                            callBackChange($.fn.indices(currRow,'addRow',exec132));
+                var paramEnter2 = {
+                   fn: "execEnter2",
+                   r:row,
+                   c: col,
+                   author:window.editorID,
+                   elem:"<tr><td contenteditable=\"true\"></td></tr>"
+                };
 
-                        }
-                        return;
-                      }
-                      case 8:
-                      {
-                        if(col > 0 ) return;
-                        var currTr = $(window.getSelection().anchorNode).parent().parent();
-                        console.log(currTr);
-                        if(currTr.is(":first-child")) return;
+                notifyChange($.fn.indices(currRow,'addRow',paramEnter2));
 
-                        var prevRow = currTr.prev();
-                        var cursorPos = prevRow.children("td").text().length;
-                        var text = currTr.children("td").text();
+            }
+            return;
+          }
+          case 8:
+          {
+            var currTr = $(window.getSelection().anchorNode).parent().parent();
+            if(col > 0 || currTr.is(":first-child")) return;
 
-                        callBackChange($.fn.indices(prevRow,'remove',null,false,true));
+            e.preventDefault();
 
-                        prevRow.children("td").text(prevRow.children("td").text() + text);
-                        console.log(prevRow.children("td").text());
-                        currTr.remove();
-                        prevRow.focusEditable(cursorPos);
-                        e.preventDefault();
+            var paramBackspace = {
+              fn: "execBackspace",
+              r: row,
+              c: col,
+              author:window.editorID,
 
-                        return;
-                      }
-                      case 46:
-                      {
-                        var currTr = $(window.getSelection().anchorNode).parent().parent();
-                        if(currTr.is(":last-child")) return;
+            };
 
+            notifyChange($.fn.indices(currRow,'removeRow',paramBackspace,true,false));
 
-                        var nextRow = currTr.next();
-                        var cursorPos = currRow.children("td").text().length;
-                        var text = nextRow.children("td").text();
-                        var currText = currRow.children("td").text();
-                        if(currText.length > col) return;
+            return;
+          }
+          case 46:
+          {
+            var currTr = $(window.getSelection().anchorNode).parent().parent();
+            var currText = currRow.children("td").text();
 
-                        currTr.children("td").text(currTr.children("td").text() + text);
+            if(currTr.is(":last-child") || currText.length > col) return;
 
-                        callBackChange($.fn.indices(currRow,'remove',null,false,true));
+            e.preventDefault();
 
-                        nextRow.remove();
-                        currRow.focusEditable(cursorPos);
+            var paramCanc = {
 
-                        e.preventDefault();
-                        return;
-                      }
-                      case 38:
-                      case 40: {e.preventDefault(); return; }
-                      default: return;
-                   }
+              fn: "execCanc",
+              r: row,
+              c: col,
+              author:window.editorID,
+            };
 
+            notifyChange($.fn.indices(currRow,'removeRow',paramCanc,false,true));
 
-              }
-  };
+            return;
+          }
+          case 38:
+          case 40: {e.preventDefault(); return; }
+          default: return;
+       }
+  }
+};
 
-$.fn.indices = function(currTr,action,func,prev,next){
+$.fn.indices = function(currTr,action,func,prev,next) {
 
-                   addPrev = (typeof prev == 'undefined' || prev == true)?true:false;
-                   addNext = (typeof next == 'undefined' || next == true)?true:false;
+   addPrev = (typeof prev == 'undefined' || prev == true)?true:false;
+   addNext = (typeof next == 'undefined' || next == true)?true:false;
 
-                   domCurr = currTr.get(0);
-                   domNext = (currTr.is(":last-child"))?null:currTr.next().get(0);
+   domCurr = currTr.get(0);
+   domNext = (currTr.is(":last-child"))?null:currTr.next().get(0);
 
-                   func['prevIndex'] = (typeof domCurr != 'undefined' && addPrev)?currTr.attr('_index'):"null";
-                   func['prevSubIndex']= (typeof domCurr != 'undefined' && addPrev)?currTr.attr('_subindex'):"null";
-                   func['nextIndex']= (domNext != null && addNext)?$(domNext).attr('_index'):"null";
-                   func['nextSubIndex']=(domNext != null && addNext)?$(domNext).attr('_subindex'):"null";
-                   func['action'] = action;
+   func['prevIndex'] = (typeof domCurr != 'undefined' && addPrev)?currTr.attr('_index'):"null";
+   func['prevSubIndex']= (typeof domCurr != 'undefined' && addPrev)?currTr.attr('_subindex'):"null";
+   func['nextIndex']= (domNext != null && addNext)?$(domNext).attr('_index'):"null";
+   func['nextSubIndex']=(domNext != null && addNext)?$(domNext).attr('_subindex'):"null";
+   func['action'] = action;
 
-                   console.log(JSON.stringify(func));
-                   return JSON.stringify(func);
+   return JSON.stringify(func);
 
-                 }
+ }
 
 $.fn.documentize = function(callBackChange){
 
