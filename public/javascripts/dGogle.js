@@ -5,10 +5,25 @@ app.factory('$streamModule',function streamModuleFactory ($websocket) {
   var ws = $websocket('ws://localhost:9001/ws');
   var messages = [];
 
+  ws.onOpen(function(){
+    ws.send({"editorID":window.editorID,
+             "action":"join",
+             "project":$("#project").attr("_projectName"),
+             "file":$("#file").attr("_fileName")});
+  });
+
   var dataStreamClass = {
     messages : messages,
-    send: function(msg){console.log("invio"); ws.send(msg); console.log("sending: " + msg);},
-    close: function(){console.log("chiudo"); ws.close();},
+    send: function(msg){ ws.send(msg);},
+    bye: function(){
+                     ws.send({  "editorID":window.editorID,
+                                "action":"leave",
+                                "project":$("#project").attr("_projectName"),
+                                "file":$("#file").attr("_fileName")
+                             });
+                     ws.close();
+                   },
+
     registerCallback: function(func){ws.onMessage(func)},
   };
 
@@ -17,6 +32,10 @@ app.factory('$streamModule',function streamModuleFactory ($websocket) {
 });
 
 app.run(['$rootScope','$streamModule',function(scope,stream){
+
+   window.onbeforeunload = function (e) {
+     stream.bye();
+   };
 
    window.editorID = String.prototype.makeid(128);
    console.log(window.editorID);
@@ -57,8 +76,6 @@ app.run(['$rootScope','$streamModule',function(scope,stream){
       if(param.author == window.editorID)
         elem.focusEditable();
       else if(window.col >= param.c && window.row == param.r){
-
-        console.log("non author change pos: new pos| r: " + (parseInt(window.row)+1) + " c: " + (parseInt(window.col) - parseInt(param.c)));
         row = $('tr:eq('+(parseInt(window.row)+1)+')').get(0);
         idx = parseInt(window.col - param.c); 
         $(row).focusEditable(idx);
@@ -133,19 +150,52 @@ app.run(['$rootScope','$streamModule',function(scope,stream){
      $(currRow.get(0)).focusEditable(param.cd+1);
    }
 
-  $("#page").documentize(stream.send);
+   window.viewFn['join'] = function(param)
+   {
 
-  var exec = function(resp){
-    console.log("Server Say: " + resp.data);
-    data = JSON.parse(resp.data);
-    window.viewFn[data.fn](data);
-  }
+     if(param.editorID != window.editorID)
+     {
+        var pingData = {"action":"ping","editorID": window.editorID};
+        $("body").append("<div id=\""+param.editorID+"\" style=\"border-left:1px solid red;\" z-index=\"100\">&nbsp;</div>");
 
-  stream.registerCallback(exec);
+        stream.send(JSON.stringify(pingData));
+     }
 
+   }
+   window.viewFn['leave'] = function(param){
 
+      $("#"+param.editorID).remove();
+   }
+   window.viewFn['ping'] = function(param){
+     if(param.editorID != window.editorID)
+     {
+       $("body").append("<div id=\""+param.editorID+"\" style=\"border-left:1px solid red;\" z-index=\"100\">&nbsp;</div>");
+     }
+   }
+
+   $("#page").documentize(stream.send);
+
+   stream.registerCallback(exec);
 
 }]);
+
+var exec = function(resp){
+    console.log("Server Say: " + resp.data);
+    data = JSON.parse(resp.data);
+    /*if(data.author != window.editorID && data.fn != "join" && data.fn != "ping")
+    {
+      var currRow = $('tr:eq('+(parseInt(data.r))+')').get(0);
+      var range = document.createRange();
+      range.selectNode($(currRow).children("td").contents().get(0));
+      range.setStart($(currRow).children("td").contents().get(0),data.c);
+      range.setEnd($(currRow).children("td").contents().get(0),data.c);
+      authorDiv = $("#"+data.author).get(0);
+      range.insertNode(authorDiv);
+      $($('tr:eq('+(parseInt(window.r))+')').get(0)).children("td").focusEditable(window.c);
+    }*/
+
+    window.viewFn[data.fn](data);
+}
 
 String.prototype.appendAtIndex=function(char,index)
 {
@@ -336,8 +386,6 @@ $.fn.fn = function(e,notifyChange){
           case 40: {e.preventDefault(); return; }
           default:
             return
-
-
        }
   }
 
@@ -374,8 +422,6 @@ $.fn.indices = function(currTr,action,func,prev,next) {
    domCurr = currTr.get(0);
    domNext = (currTr.is(":last-child"))?null:currTr.next().get(0);
 
-   console.log(currTr.attr('_index'));
-
    func['prevIndex'] = (typeof domCurr != 'undefined' && addPrev)?currTr.attr('_index'):"null";
    func['prevSubIndex']= (typeof domCurr != 'undefined' && addPrev)?currTr.attr('_subindex'):"null";
    func['nextIndex']= (domNext != null && addNext)?$(domNext).attr('_index'):"null";
@@ -400,10 +446,6 @@ $.fn.documentize = function(callBackChange){
 
       var selectedNode = null;
       var selectedDistance = null;
-
-      console.log();
-      console.log(e.clientX);
-      console.log(e.clientY);
 
       if(e.target.nodeName != "TD")
       {

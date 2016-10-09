@@ -15,10 +15,10 @@ public class HomeController extends Controller {
      * this method will be called when the application receives a
      * <code>GET</code> request with a path of <code>/</code>.
      */
-    public Result index() {
+    public Result index(String project, String file) {
 
 
-        return ok(index.render("chinese Gogle Docs","","Unamed Document"));
+        return ok(index.render("chinese Gogle Docs","",project,file));
     }
 
 

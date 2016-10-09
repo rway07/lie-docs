@@ -18,6 +18,8 @@ public class editor extends UntypedActor {
     private final ActorSystem system = getContext().system();
     private final ActorRef socket;
     private final ActorRef router;
+    private String room;
+    private String editorID;
 
     LoggingAdapter log = Logging.getLogger(getContext().system(), this);
 
@@ -29,9 +31,6 @@ public class editor extends UntypedActor {
     public editor(ActorRef out) {
 
       this.router =  DistributedPubSub.get(getContext().system()).mediator();
-
-      // subscribe to the document named "content"
-      router.tell(new DistributedPubSubMediator.Subscribe("content", getSelf()), getSelf());
       this.socket = out;
 
     }
@@ -40,7 +39,17 @@ public class editor extends UntypedActor {
     public void onReceive(Object message) {
 
         try{
-            if (message instanceof DistributedPubSubMediator.SubscribeAck);
+
+            if (message instanceof DistributedPubSubMediator.SubscribeAck){
+                Logger.error("NEW EDITOR : for room: {}",this.room);
+                jsonUtil msg = new jsonUtil("");
+                msg.put("fn","join");
+                msg.put("editorID",this.editorID);
+                msg.put("action","join");
+                msg.put("ack","");
+                router.tell(new DistributedPubSubMediator.Publish(this.room, msg.toString()),getSelf());
+
+            }
             else if (message instanceof documentChanges ){
                 socket.tell(((documentChanges)message).getMsg(),self());
             }else if (message instanceof String) {
@@ -51,35 +60,92 @@ public class editor extends UntypedActor {
 
                 //asking db for parameter
                 //dbUtil   db = new dbUtil(system);
-
-                switch((String)jsonMsg.get("action"))
+                if((String)jsonMsg.get("editorID") != null)
                 {
-                    case "addChar":
-                    case "removeChar":
+
+
+                    // subscribe to the document named "content"
+
+                    switch((String)jsonMsg.get("action"))
                     {
-                        jsonMsg.put("rd",((Long)jsonMsg.get("r")).toString());
-                        Long pos = (Long)jsonMsg.get("c");
-                        pos +=1;
-                        jsonMsg.put("cd",pos.toString());
-                        break;
+                        case "join":
+                        {
+                            if(jsonMsg.get("ack") == null)
+                            {
+                                String project = (String)jsonMsg.get("project");
+                                String file = (String)jsonMsg.get("file");
+
+                                this.room = project + " " + file;
+                                this.editorID = (String)jsonMsg.get("editorID");
+                                router.tell(new DistributedPubSubMediator.Subscribe(room, getSelf()), getSelf());
+                                break;
+                            }
+                            else if(!this.editorID.equals((String)jsonMsg.get("editorID")))
+                            {
+                                jsonUtil join = new jsonUtil("");
+                                join.put("editorID",jsonMsg.get("editorID"));
+                                join.put("fn","join");
+                                socket.tell(join.toString(),self());
+                            }
+                            break;
+
+                        }
+                        case "leave":
+                        {
+                            Logger.info("LEAVE EDITOR : leaving room {}",this.room);
+                            jsonUtil msg = new jsonUtil("");
+                            msg.put("fn","leave");
+                            msg.put("editorID",this.editorID);
+                            router.tell(new DistributedPubSubMediator.Publish(this.room, new documentChanges(msg.toString())),getSelf());
+                            router.tell(new DistributedPubSubMediator.Unsubscribe(room,getSelf()), getSelf());
+                            break;
+                        }
+                        case "ping":
+                        {
+
+                            jsonUtil msg = new jsonUtil("");
+                            msg.put("fn","ping");
+                            msg.put("editorID",this.editorID);
+                            Logger.info("mi annuncio:  " + msg.toString());
+                            router.tell(new DistributedPubSubMediator.Publish(this.room, new documentChanges(msg.toString())),getSelf());
+                            break;
+
+                        }
+
                     }
-                    case "removeRow":
-                    case "addRow":
+
+
+                }
+                else
+                {
+                    switch((String)jsonMsg.get("action"))
                     {
-                        jsonMsg.put("_subindex","0");
-                        jsonMsg.put("_index","0");
-                        break;
+                        case "addChar":
+                        case "removeChar":
+                        {
+                            jsonMsg.put("rd",((Long)jsonMsg.get("r")).toString());
+                            Long pos = (Long)jsonMsg.get("c");
+                            pos +=1;
+                            jsonMsg.put("cd",pos.toString());
+                            break;
+                        }
+                        case "removeRow":
+                        case "addRow":
+                        {
+                            jsonMsg.put("_subindex","0");
+                            jsonMsg.put("_index","0");
+                            break;
+                        }
                     }
+                    //publish message
+
+                    //Future<ResultSet> f = db.q("select * from projects");
+
+                    Logger.warn("dico a tutti:" + jsonMsg.toString());
+                    router.tell(new DistributedPubSubMediator.Publish(this.room, new documentChanges(jsonMsg.toString())),getSelf());
+
                 }
 
-
-
-                //publish message
-
-                //Future<ResultSet> f = db.q("select * from projects");
-
-                Logger.warn("dico a tutti:" + jsonMsg.toString());
-                router.tell(new DistributedPubSubMediator.Publish("content", new documentChanges(jsonMsg.toString())),getSelf());
 
                 //******************************
             /*

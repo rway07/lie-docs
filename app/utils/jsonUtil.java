@@ -15,9 +15,13 @@ public class jsonUtil {
     private JSONObject o;
 
     public jsonUtil(String j){
+
       p=new JSONParser();
       try{
-          o=(JSONObject)p.parse(j);
+          if(!j.equals(""))
+            o=(JSONObject)p.parse(j);
+           else o = new JSONObject();
+
       } catch (ParseException e){
           Logger.error(e.toString());
       }
