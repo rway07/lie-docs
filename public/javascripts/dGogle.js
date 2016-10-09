@@ -156,7 +156,7 @@ app.run(['$rootScope','$streamModule',function(scope,stream){
      if(param.editorID != window.editorID)
      {
         var pingData = {"action":"ping","editorID": window.editorID};
-        $("body").append("<div id=\""+param.editorID+"\" style=\"border-left:1px solid red;\" z-index=\"100\">&nbsp;</div>");
+        $("body").append("<div id=\""+param.editorID+"\" style=\"border-left:1px solid red;display:inline;\" z-index=\"100\">&nbsp;</div>");
 
         stream.send(JSON.stringify(pingData));
      }
@@ -169,7 +169,7 @@ app.run(['$rootScope','$streamModule',function(scope,stream){
    window.viewFn['ping'] = function(param){
      if(param.editorID != window.editorID)
      {
-       $("body").append("<div id=\""+param.editorID+"\" style=\"border-left:1px solid red;\" z-index=\"100\">&nbsp;</div>");
+       $("body").append("<div id=\""+param.editorID+"\" style=\"border-left:1px solid red; display:inline;\" z-index=\"100\"></div>");
      }
    }
 
@@ -182,19 +182,27 @@ app.run(['$rootScope','$streamModule',function(scope,stream){
 var exec = function(resp){
     console.log("Server Say: " + resp.data);
     data = JSON.parse(resp.data);
-    /*if(data.author != window.editorID && data.fn != "join" && data.fn != "ping")
+
+    window.viewFn[data.fn](data);
+
+    if(data.author != window.editorID && data.fn != "join" && data.fn != "ping")
     {
       var currRow = $('tr:eq('+(parseInt(data.r))+')').get(0);
       var range = document.createRange();
-      range.selectNode($(currRow).children("td").contents().get(0));
-      range.setStart($(currRow).children("td").contents().get(0),data.c);
-      range.setEnd($(currRow).children("td").contents().get(0),data.c);
-      authorDiv = $("#"+data.author).get(0);
-      range.insertNode(authorDiv);
-      $($('tr:eq('+(parseInt(window.r))+')').get(0)).children("td").focusEditable(window.c);
-    }*/
 
-    window.viewFn[data.fn](data);
+      $("#"+data.author).remove();
+      elem = $("<div id=\""+data.author+"\" style=\"border-left:1px solid red; display:inline;\" z-index=\"100\"></div>").get(0);
+
+      range.selectNode($(currRow).children("td").contents().get(0));
+      range.setStart($(currRow).children("td").contents().get(0),data.c+1);
+      range.setEnd($(currRow).children("td").contents().get(0),data.c+1);
+      authorDiv = $("#"+data.author).get(0);
+      range.insertNode(elem);
+      $($('tr:eq('+(parseInt(window.r))+')').get(0)).focusEditable(window.c);
+
+
+
+    }
 }
 
 String.prototype.appendAtIndex=function(char,index)

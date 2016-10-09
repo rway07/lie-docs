@@ -3,4 +3,5 @@
   }
 
   [contenteditable]:focus { outline: 0px solid transparent; }
-  tr {min-height:5px;}
+  tr{min-height:5px; width:100%;}
+  td{width:100%;}
