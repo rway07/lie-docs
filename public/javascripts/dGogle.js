@@ -87,6 +87,18 @@ app.run(['$rootScope','$streamModule',function(scope,stream){
       }
    }
 
+   window.viewFn["execBackspaceChar"] = function(param)
+   {
+      var currRow = $($('tr:eq('+(parseInt(param.r))+')').get(0));
+      $(currRow).focusEditable(param.c);
+      document.execCommand('delete', false, null);
+      if(param.author != window.editorID)
+      {
+        $($('tr:eq('+(parseInt(window.row))+')').get(0)).focusEditable(window.col);
+      }
+
+   }
+
    window.viewFn['execCanc'] = function(param){
 
       var nextRow = $($('tr:eq('+(parseInt(param.r+1))+')').get(0));
@@ -105,6 +117,16 @@ app.run(['$rootScope','$streamModule',function(scope,stream){
         $($('tr:eq('+parseInt(window.row-1)+')').get(0)).focusEditable((parseInt(window.col)));
       }
    }
+   window.viewFn['execCancChar']=function(param){
+      var currRow = $($('tr:eq('+(parseInt(param.r))+')').get(0));
+      $(currRow).focusEditable(param.c+1);
+      document.execCommand('delete', false, null);
+      if(param.author != window.editorID)
+      {
+        $($('tr:eq('+(parseInt(window.row))+')').get(0)).focusEditable(window.col);
+      }
+   }
+
    window.viewFn['execAddChar']=function(param){
      var currRow = $('tr:eq('+param.rd+')');
      currRow.children("td").text(currRow.children("td").text().appendAtIndex(param.chr,param.cd))
@@ -120,6 +142,8 @@ app.run(['$rootScope','$streamModule',function(scope,stream){
   }
 
   stream.registerCallback(exec);
+
+
 
 }]);
 
@@ -238,41 +262,73 @@ $.fn.fn = function(e,notifyChange){
           }
           case 8:
           {
-            var currTr = $(window.getSelection().anchorNode).parent().parent();
-            if(col > 0 || currTr.is(":first-child")) return;
-
             e.preventDefault();
 
-            var paramBackspace = {
-              fn: "execBackspace",
-              r: row,
-              c: col,
-              author:window.editorID,
+            //var currRow = $(window.getSelection().anchorNode).parent().parent();
+            if(col > 0)
+            {
 
-            };
+               var paramBackspaceChar = {
 
-            notifyChange($.fn.indices(currRow,'removeRow',paramBackspace,true,false));
+                 fn:"execBackspaceChar",
+                 r:row,
+                 c:col,
+                 author:window.editorID
 
-            return;
+               };
+               notifyChange($.fn.indices(currRow,'removeChar',paramBackspaceChar,true,false));
+
+            }
+            else
+            {
+              if(currRow.is(":first-child")) return;
+              var paramBackspace = {
+                fn: "execBackspace",
+                r: row,
+                c: col,
+                author:window.editorID
+              };
+
+              notifyChange($.fn.indices(currRow,'removeRow',paramBackspace,true,false));
+
+              return;
+            }
+
+
+
           }
           case 46:
           {
+            e.preventDefault();
+
             var currTr = $(window.getSelection().anchorNode).parent().parent();
             var currText = currRow.children("td").text();
 
-            if(currTr.is(":last-child") || currText.length > col) return;
+            if(currText.length > col){
 
-            e.preventDefault();
+               var paramCancChar = {
 
-            var paramCanc = {
+                    fn:"execCancChar",
+                    r:row,
+                    c:col,
+                    author:window.editorID
 
-              fn: "execCanc",
-              r: row,
-              c: col,
-              author:window.editorID,
-            };
+               };
+               notifyChange($.fn.indices(currRow,'removeChar',paramCancChar,true,false));
 
-            notifyChange($.fn.indices(currRow,'removeRow',paramCanc,false,true));
+            }else{
+                if(currTr.is(":last-child")) return;
+
+                var paramCanc = {
+
+                  fn: "execCanc",
+                  r: row,
+                  c: col,
+                  author:window.editorID,
+                };
+
+                notifyChange($.fn.indices(currRow,'removeRow',paramCanc,false,true));
+            }
 
             return;
           }
@@ -318,6 +374,8 @@ $.fn.indices = function(currTr,action,func,prev,next) {
    domCurr = currTr.get(0);
    domNext = (currTr.is(":last-child"))?null:currTr.next().get(0);
 
+   console.log(currTr.attr('_index'));
+
    func['prevIndex'] = (typeof domCurr != 'undefined' && addPrev)?currTr.attr('_index'):"null";
    func['prevSubIndex']= (typeof domCurr != 'undefined' && addPrev)?currTr.attr('_subindex'):"null";
    func['nextIndex']= (domNext != null && addNext)?$(domNext).attr('_index'):"null";
@@ -330,12 +388,37 @@ $.fn.indices = function(currTr,action,func,prev,next) {
 
 $.fn.documentize = function(callBackChange){
 
+  var doc = $(this); 
   $(this).find("td").on('keydown keyup mouseup',function (e){$.fn.fn(e,callBackChange);});
   $(this).find("td").on('keypress',function (e){$.fn.streamChar(e,callBackChange);});
-};
 
+  $(document).click(function(e){
 
+      var distance = function(x1,x2,y1,y2){
+          return Math.sqrt(Math.pow(x2-x1,2) + Math.pow(y2-y1,2))
+      }
 
+      var selectedNode = null;
+      var selectedDistance = null;
 
+      console.log();
+      console.log(e.clientX);
+      console.log(e.clientY);
 
+      if(e.target.nodeName != "TD")
+      {
+        doc.find("tr").each(function(idx,obj){
 
+                 var dist = distance($(obj).position().left,e.clientX,$(obj).position().top,e.clientY);
+                 if(selectedNode == null || dist <= selectedDistance)
+                 {
+                   selectedDistance = dist;
+                   selectedNode = obj;
+                 }
+        });
+
+        $(selectedNode).focusEditable($(selectedNode).children("td").text().length);
+
+      }
+    });
+}

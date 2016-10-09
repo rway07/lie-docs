@@ -55,6 +55,7 @@ public class editor extends UntypedActor {
                 switch((String)jsonMsg.get("action"))
                 {
                     case "addChar":
+                    case "removeChar":
                     {
                         jsonMsg.put("rd",((Long)jsonMsg.get("r")).toString());
                         Long pos = (Long)jsonMsg.get("c");
