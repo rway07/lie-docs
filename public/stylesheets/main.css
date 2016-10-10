@@ -5,3 +5,33 @@
   [contenteditable]:focus { outline: 0px solid transparent; }
   tr{min-height:5px; width:100%;}
   td{width:100%;}
+
+  .caret{
+    color:red;
+    background-color:rgba(255,255,255,0);
+    display:inline;
+
+    border: none;
+    margin: 0;
+    padding: 0;
+    margin-left: -3px;
+    margin-right: -3px;
+
+    -webkit-animation: blink 1s steps(5, start) infinite;
+    -moz-animation:    blink 1s steps(5, start) infinite;
+    -o-animation:      blink 1s steps(5, start) infinite;
+    animation:         blink 1s steps(5, start) infinite;
+  }
+
+  @-webkit-keyframes blink {
+    to { visibility: hidden; }
+  }
+  @-moz-keyframes blink {
+    to { visibility: hidden; }
+  }
+  @-o-keyframes blink {
+    to { visibility: hidden; }
+  }
+  @keyframes blink {
+    to { visibility: hidden; }
+  }

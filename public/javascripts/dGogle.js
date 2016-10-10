@@ -37,8 +37,43 @@ app.run(['$rootScope','$streamModule',function(scope,stream){
      stream.bye();
    };
 
+   window.row=0;
+   window.col=0;
    window.editorID = String.prototype.makeid(128);
-   console.log(window.editorID);
+
+   window.addCaret = function(row,col,caret,id){
+      if( caret == null)
+      {
+        randomColor = function () {
+            var letters = '0123456789ABCDEF';
+            var color = '#';
+            for (var i = 0; i < 6; i++ ) {
+                color += letters[Math.floor(Math.random() * 16)];
+            }
+            return color;
+        };
+
+
+        caret = $.parseHTML("<div class=\"caret\" z-index=\"100\">|</div>");
+        $(caret).attr("id",id);
+        $(caret).css("color",randomColor());
+        caret = $(caret).get(0);
+      }
+
+      var currRow = $('tr:eq('+(parseInt(row))+')').get(0);
+      var range = document.createRange();
+
+      range.selectNode($(currRow).children("td").contents().get(0));
+      range.setStart($(currRow).children("td").contents().get(0),col);
+      range.setEnd($(currRow).children("td").contents().get(0),col);
+      console.log(caret);
+      range.insertNode(caret);
+
+      myRow = $('tr:eq('+(parseInt(window.row))+')').get(0);
+      $(myRow).focusEditable(window.col);
+
+   }
+
    window.viewFn = [];
    window.viewFn['execEnter1'] = function(param){
 
@@ -156,7 +191,9 @@ app.run(['$rootScope','$streamModule',function(scope,stream){
      if(param.editorID != window.editorID)
      {
         var pingData = {"action":"ping","editorID": window.editorID};
-        $("body").append("<div id=\""+param.editorID+"\" style=\"border-left:1px solid red;display:inline;\" z-index=\"100\">&nbsp;</div>");
+
+        if(typeof $("#" + param.editorID).get(0) == "undefined")
+          window.addCaret(0,0,null,param.editorID);
 
         stream.send(JSON.stringify(pingData));
      }
@@ -167,9 +204,9 @@ app.run(['$rootScope','$streamModule',function(scope,stream){
       $("#"+param.editorID).remove();
    }
    window.viewFn['ping'] = function(param){
-     if(param.editorID != window.editorID)
+     if(param.editorID != window.editorID && typeof $("#" + param.editorID).get(0) == "undefined")
      {
-       $("body").append("<div id=\""+param.editorID+"\" style=\"border-left:1px solid red; display:inline;\" z-index=\"100\"></div>");
+       window.addCaret(0,0,null,param.editorID);
      }
    }
 
@@ -183,25 +220,42 @@ var exec = function(resp){
     console.log("Server Say: " + resp.data);
     data = JSON.parse(resp.data);
 
+    restoreCaret = [];
+    if(data.fn != "join" && data.fn != "ping")
+    {
+
+          var currRow = $('tr:eq('+(parseInt(data.r))+')').get(0);
+          //replacing current row text with caret placeholder
+          text = "";
+          $(currRow).children("td").contents().each(function(idx,obj){
+            if(obj.nodeType == 3)
+            {
+              text += obj.nodeValue;
+            }
+            else if($(obj).attr("id") != data.author)
+            {
+               restoreCaret[idx]={"strIndex": text.length,"caret":obj};
+               $(obj).remove();
+            }
+
+          });
+
+          $("#"+data.author).remove();
+          $(currRow).children("td").text(text);
+
+    }
+
     window.viewFn[data.fn](data);
 
     if(data.author != window.editorID && data.fn != "join" && data.fn != "ping")
     {
-      var currRow = $('tr:eq('+(parseInt(data.r))+')').get(0);
-      var range = document.createRange();
+        restoreCaret.forEach(function(obj,idx){
+             console.log("aggiungo restore");
+             window.addCaret(parseInt(data.r),obj.strIndex,obj.obj);
+        });
 
-      $("#"+data.author).remove();
-      elem = $("<div id=\""+data.author+"\" style=\"border-left:1px solid red; display:inline;\" z-index=\"100\"></div>").get(0);
-
-      range.selectNode($(currRow).children("td").contents().get(0));
-      range.setStart($(currRow).children("td").contents().get(0),data.c+1);
-      range.setEnd($(currRow).children("td").contents().get(0),data.c+1);
-      authorDiv = $("#"+data.author).get(0);
-      range.insertNode(elem);
-      $($('tr:eq('+(parseInt(window.r))+')').get(0)).focusEditable(window.c);
-
-
-
+        console.log("aggiungo me stesso");
+        window.addCaret(parseInt(data.r),parseInt(data.c),null,data.author);
     }
 }
 
@@ -267,7 +321,9 @@ $.fn.fn = function(e,notifyChange){
   var currRow = $(window.getSelection().anchorNode).parent().parent();
   var row = currRow.index();
 
-  var streamableChar = false;
+  console.log("r:"+row+"c:"+col);
+  text = currRow.contents();
+
 
   window.row = row;
   window.col = col;
