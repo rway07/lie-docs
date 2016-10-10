@@ -125,7 +125,6 @@ public class editor extends UntypedActor {
                         {
                             jsonMsg.put("rd",((Long)jsonMsg.get("r")).toString());
                             Long pos = (Long)jsonMsg.get("c");
-                            pos +=1;
                             jsonMsg.put("cd",pos.toString());
                             break;
                         }
