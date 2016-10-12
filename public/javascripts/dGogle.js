@@ -1,3 +1,4 @@
+"use strict";
 var app = angular.module('dGogle',['angular-websocket']);
 
 app.factory('$streamModule',function streamModuleFactory ($websocket) {
@@ -8,6 +9,7 @@ app.factory('$streamModule',function streamModuleFactory ($websocket) {
   ws.onOpen(function(){
     ws.send({"editorID":window.editorID,
              "action":"join",
+             "editorColor":window.editorColor,
              "project":$("#project").attr("_projectName"),
              "file":$("#file").attr("_fileName")});
   });
@@ -41,64 +43,172 @@ app.run(['$rootScope','$streamModule',function(scope,stream){
    window.col=0;
    window.editorID = String.prototype.makeid(128);
 
-   window.addCaret = function(row,col,caret,id){
+
+   window.randomColor = function () {
+      var letters = '0123456789ABCDEF';
+      var color = '#';
+      for (var i = 0; i < 6; i++ ) {
+          color += letters[Math.floor(Math.random() * 16)];
+      }
+      return color;
+    };
+
+   window.editorColor = randomColor();
+   $("#editorColor").css("background-color",window.editorColor);
+
+   window.removeVirtualCaret = function(rowID,actionAuthor,action){
+
+     if(action != "join" && action != "ping" && action != "leave")
+     {
+       var currRow = $('tr:eq('+(parseInt(rowID))+')').get(0);
+       var text = "";
+       var nodes = $(currRow).children("td").contents();
+
+       var obj = null;
+       for(var i=0;i<nodes.length; i++){
+         obj = nodes[i];
+         //nodo tipo testo
+         if(obj.nodeType == 3)
+         {
+           text += obj.nodeValue;
+         }
+         //salvo le posizioni di tutti i caret virtuali
+         else
+         {
+            window.restoreCaret.push({"index": text.length,"obj":obj});
+            $(obj).remove();
+         }
+       }
+
+       //creo text node solo testo
+       $(currRow).children("td").text(text);
+     }
+
+   }
+
+    window.restoreCarets = function(data){
+      var virtualCarets = window.restoreCaret;
+      window.restoreCaret = [];
+
+      if(data.fn != "join" && data.fn != "ping" && data.fn != "leave"){
+
+          var currRow = $('tr:eq('+(parseInt(data.r))+')').get(0);
+          var onLeftRealCaret = 0;
+
+          for(var i=0; i<virtualCarets.length;i++)
+          {
+               var onLeftCurrentVirtual = 0;
+               var offset = 0;
+
+
+               if( data.fn == "execAddChar" && (virtualCarets[i].index >= data.c || $(virtualCarets[i].obj).attr("id") == data.author))
+                 offset = 1;
+               else if ((data.fn == "execBackspaceChar" || data.fn == "execCancChar") && (virtualCarets[i].index >= data.c || $(virtualCarets[i].obj).attr("id") == data.author ))
+                 offset = -1;
+               
+               if($(virtualCarets[i].obj).attr("id") == data.author)
+                 virtualCarets[i].index = (parseInt(data.c)) + offset;
+               else    
+                 virtualCarets[i].index += offset ;
+                 
+               onLeftRealCaret += ((virtualCarets[i].index) <= window.col)?1:0;
+
+               for(var j = 0 ; j<=i; j++)
+               {
+                 if(virtualCarets[j].index < virtualCarets[i])
+                   onLeftCurrentVirtual++;
+               }
+
+               if($(virtualCarets[i].obj).attr("id") == data.author)
+                 console.log("set col = " + parseInt(virtualCarets[i].index));
+
+               window.addCaret(parseInt(data.r),parseInt(virtualCarets[i].index),virtualCarets[i].obj,$(virtualCarets[i].obj).attr("id"),onLeftCurrentVirtual);
+          };
+
+          var realCaretIndex = window.col;
+          var offset = 0;
+          if( data.fn == "execAddChar" && realCaretIndex >= data.c)
+            offset = 1;
+          else if ((data.fn == "execBackspaceChar" || data.fn == "execCancChar") && realCaretIndex >= data.c)
+            offset = -1;
+
+          window.col = parseInt(realCaretIndex) + parseInt(offset);
+
+          console.log("window owner update focus");
+          $($('tr:eq('+(parseInt(window.row))+')')).focusEditable(parseInt(window.col));
+
+      }
+
+    }
+   window.min = function(a,b){return (a<=b)?a:b;}
+   window.selectTextNodeOnCol=function(row,col){
+       var currRow = $('tr:eq('+(parseInt(row))+')').get(0);
+       var currTextNode = $(currRow).children("td").contents();
+       var currentLength = 0;
+       var residualLength = col;
+       var currNode = null;
+       if(currTextNode.length >1)
+       {
+          for(var i = 0; i< currTextNode.length; i++)
+          {
+            if(currTextNode[i].nodeType == "3")
+            {
+              currNode = currTextNode[i];
+              currentLength += currTextNode[i].nodeValue.length;
+
+              if(currentLength >= col)
+                return {"textNode":currTextNode[i],"col":residualLength};
+              else
+                residualLength -= currTextNode[i].nodeValue.length;
+            }
+          }
+          return {"textNode":currNode, "col":currNode.length};
+       }
+       else
+         currTextNode = {"textNode":currTextNode[0],"col":col};
+
+       return currTextNode;
+
+   }
+
+
+   window.addCaret = function(row,col,caret_,id,color,leftCaret){
+      var caret = caret_;
+      var currTextNode = null;
+      var currRow = $('tr:eq('+(parseInt(row))+')').get(0);
+      var range = document.createRange();
+
       if( caret == null)
       {
-        randomColor = function () {
-            var letters = '0123456789ABCDEF';
-            var color = '#';
-            for (var i = 0; i < 6; i++ ) {
-                color += letters[Math.floor(Math.random() * 16)];
-            }
-            return color;
-        };
-
 
         caret = $.parseHTML("<div class=\"caret\" z-index=\"100\">|</div>");
         $(caret).attr("id",id);
-        //$(caret).css("color",randomColor());
+        $(caret).css("color",color);
         caret = $(caret).get(0);
       }
 
-      
-      var currRow = $('tr:eq('+(parseInt(row))+')').get(0);
-      var currTextNode = $(currRow).children("td").contents();
-      var range = document.createRange();
 
-      tdString = "";
-      textNodes = [];
+      var nodeSelected = selectTextNodeOnCol(row,col);
 
-      if(currTextNode.length >1)
-      { 
-        for(var i = 0; i< currTextNode.length; i++)
-        {
-          obj = currTextNode[i];
-          if(obj.nodeType == 3) 
-          {
-            tdString += obj.nodeValue;
-            textNodes.push(obj);
-          }
-          else tdString += "|"; 
-        }  
+      col = nodeSelected.col;
+      currTextNode = nodeSelected.textNode;
+      console.log(currTextNode);
       
-      tdString = tdString.substr(0,col+1);
-      
-      leftCaret = (tdString.match(/\|/g) || []).length;
-      currTextNode = textNodes[leftCaret];
-      newC = col - (tdString.lastIndexOf("|")>0?tdString.lastIndexOf("|"):0);
-      col = newC;
-    }
-    else
-      currTextNode = currTextNode[0];
+      if(typeof currTextNode == "undefined")
+      {
+        console.log("undefined");
+      }
 
       range.selectNode(currTextNode);
-      range.setStart(currTextNode,col);
-      range.setEnd(currTextNode,col);
+      range.setStart(currTextNode,min(col,currTextNode.length));
+      range.setEnd(currTextNode,min(col,currTextNode.length));
       console.log(caret);
       range.insertNode(caret);
 
-      //myRow = $('tr:eq('+(parseInt(window.row))+')').get(0);
-      //$(myRow).focusEditable(parseInt(window.col));
+      $(currRow).children("td")
+                .contents()
+                .filter(function(){return this.nodeType == 3 && this.nodeValue == "";})
+                .each(function(idx,obj){$(obj).remove();});
 
    }
 
@@ -139,8 +249,8 @@ app.run(['$rootScope','$streamModule',function(scope,stream){
       if(param.author == window.editorID)
         elem.focusEditable();
       else if(parseInt(window.col) >= parseInt(param.c) && parseInt(window.row) == parseInt(param.r)){
-        row = $('tr:eq('+(parseInt(window.row)+1)+')').get(0);
-        idx = parseInt(window.col) - parseInt(param.c);
+        var row = $('tr:eq('+(parseInt(window.row)+1)+')').get(0);
+        var idx = parseInt(window.col) - parseInt(param.c);
         $(row).focusEditable(idx);
       } else if(parseInt(window.row) > parseInt(param.r) ){
         $($('tr:eq('+(parseInt(window.row)+1)+')').get(0)).focusEditable((parseInt(window.col)));
@@ -209,17 +319,10 @@ app.run(['$rootScope','$streamModule',function(scope,stream){
 
    window.viewFn['execAddChar']=function(param){
      var currRow = $('tr:eq('+parseInt(param.rd)+')');
-     currText = currRow.children("td").text();
-     char = param.chr;
-     newText = currText.substr(0,parseInt(param.c))+char+ currText.substr(parseInt(param.c));
+     var currText = currRow.children("td").text();
+     var char = param.chr;
+     var newText = currText.substring(0,parseInt(param.c))+char+ currText.substring(parseInt(param.c));
      currRow.children("td").text(newText);
-     
-     if(param.author == window.editorID)
-     {
-       //$($('tr:eq('+(parseInt(window.row))+')').get(0)).focusEditable(parseInt(param.cd));
-       //leftCaret = currText.substr(0,param.cd).lastIndexOf("|").length
-       window.col = parseInt(param.cd);
-     }
    }
 
    window.viewFn['join'] = function(param)
@@ -227,10 +330,10 @@ app.run(['$rootScope','$streamModule',function(scope,stream){
 
      if(param.editorID != window.editorID)
      {
-        var pingData = {"action":"ping","editorID": window.editorID};
+        var pingData = {"action":"ping","editorID": window.editorID, "editorColor": window.editorColor};
 
         if(typeof $("#" + param.editorID).get(0) == "undefined")
-          window.addCaret(0,0,null,param.editorID);
+          window.addCaret(0,0,null,param.editorID,param.editorColor,null);
 
         stream.send(JSON.stringify(pingData));
      }
@@ -243,7 +346,7 @@ app.run(['$rootScope','$streamModule',function(scope,stream){
    window.viewFn['ping'] = function(param){
      if(param.editorID != window.editorID && typeof $("#" + param.editorID).get(0) == "undefined")
      {
-       window.addCaret(0,0,null,param.editorID);
+       window.addCaret(0,0,null,param.editorID,param.editorColor,null);
      }
    }
 
@@ -255,80 +358,12 @@ app.run(['$rootScope','$streamModule',function(scope,stream){
 
 var exec = function(resp){
     console.log("Server Say: " + resp.data);
-    data = JSON.parse(resp.data);
-    
-    offset = 0;
-    switch(data.fn)
-    {
-     case "execAddChar": {offset = 1; break;}
-     case "execCancChar":{offset = 0; break;}
-     case "execBackspaceChar":{offset = -1; break;};
-    } 
-    
-    restoreCaret = [];
-    leftCaret = 0;
-    if(data.fn != "join" && data.fn != "ping" && data.fn != "leave")
-    {
+    var data = JSON.parse(resp.data);
 
-          var currRow = $('tr:eq('+(parseInt(data.r))+')').get(0);
-          //replacing current row text with caret placeholder
-          text = "";
-          nodes = $(currRow).children("td").contents();
-          leftCaret = countLeftCaret($(currRow).children("td"),data.c);
- 
-          for(var i=0;i<nodes.length; i++){
-            obj = nodes[i];
-            if(obj.nodeType == 3)
-            {
-              text += obj.nodeValue;
-            }
-            else if($(obj).attr("id") != data.author)
-            {
-               restoreCaret.push({"strIndex": text.length,"caret":obj});
-               $(obj).remove();
-            }
-          }
-
-          if(data.author != window.editorID) 
-            $("#"+data.author).remove();
-
-          $(currRow).children("td").text(text);
-
-    }
-
+    window.removeVirtualCaret(data.r,data.author,data.fn);
     window.viewFn[data.fn](data);
+    window.restoreCarets(data);
 
-    if(data.fn != "join" && data.fn != "ping" && data.fn != "leave")
-    {
-        
-        for(var i=0; i<restoreCaret.length;i++)
-        {
-             console.log("aggiungo restore");
-             if(offset == 1 && restoreCaret[i].strIndex > data.c)
-               restOffset =1;
-             else if(((offset == 0 || offset == -1) && restoreCaret[i].strIndex > data.c))  
-               restOffset = -1;
-             else
-               restOffset = 0;
-             
-             window.addCaret(parseInt(data.r),parseInt(restoreCaret[i].strIndex)+ restOffset,restoreCaret[i].caret);
-        };
-
-        console.log("wincol:"+window.col);
-        if(data.author != window.editorID)
-        {
-          console.log("author caret add");
-          window.addCaret(parseInt(data.rd),parseInt(data.cd)+offset,null,data.author);  
-          window.col += (offset);
-          console.log("wincol_dopo:" +window.col);
-        }
-        else
-          window.col = parseInt(data.cd)+offset; 
-        
-        console.log("window owner update focus");
-        $($('tr:eq('+(parseInt(window.row))+')')).focusEditable(parseInt(window.col));
-        
-        }
 }
 
 
@@ -355,9 +390,9 @@ String.prototype.hashCode = function() {
 };
 
 var countLeftCaret = function(node,pivot){
-  tdString = caretToString(node,"|");
-  tdString = tdString.substr(0,pivot);
-  return tdString.match("|/g").length -1;
+  var tdString = caretToString(node,"|");
+  var str = tdString.substring(0,parseInt(pivot)+1);
+  return (str.match(/\|/g)||[]).length;
 
 }
 
@@ -372,7 +407,7 @@ var caretToString = function(node,char)
   {
     for(var i = 0; i< currTextNode.length; i++)
     {
-      obj = currTextNode[i];
+      var obj = currTextNode[i];
       if(obj.nodeType == 3)
       {
         tdString += obj.nodeValue;
@@ -384,61 +419,31 @@ var caretToString = function(node,char)
 }
 
 
+
 $.fn.focusEditable = function(col)
 {
-  var min = function(a,b){return (a<=b)?a:b;}
-
   var c = (typeof col === 'undefined')?0:col;
   var currRow = $(this).children("td");
-  var currTextNode = currRow.contents();
+
+  var selectedNode = selectTextNodeOnCol($(this).index(),col);
+  var col  = selectedNode.col;
+  var currTextNode = selectedNode.textNode;
  
   var s = window.getSelection();
   var r = document.createRange();
 
-  if(c != 0){
-
-    tdString = "";
-    textNodes = [];
-
-    if(currTextNode.length >1)
-    { 
-      for(var i = 0; i< currTextNode.length; i++)
-      {
-        obj = currTextNode[i];
-        if(obj.nodeType == 3) 
-        {
-          tdString += obj.nodeValue;
-          textNodes.push(obj);
-        }
-        else tdString += "|"; 
-      };  
-      
-      tdString = tdString.substr(0,c+1);
-      
-      leftCaret = (tdString.match(/\|/g) || []).length;
-      currTextNode = textNodes[leftCaret];
-      //TODO: unica condizione errata! verificare
-      newC = c - (tdString.lastIndexOf("|")>0?tdString.lastIndexOf("|"):0);
-      c = newC;
-    }
-    else
-      currTextNode = currTextNode[0];      
-    
+  if(currTextNode.length != 0){
 
     var actualLength =  currTextNode.length;
     r.setStart(currTextNode, min(c,actualLength));
     r.setEnd(currTextNode, min(c,actualLength));
     s.removeAllRanges();
     s.addRange(r);
+
   } else {
 
-     if(currRow.text().length == 0){
-       //currRow.get(0).innerHTML = '\u00a0';
-       currRow.get(0).focus();
-       document.execCommand('delete', false, null);
-     }else{
-        currRow.get(0).focus();
-     }
+     currRow.get(0).focus();
+
   }
 }
 
@@ -453,7 +458,7 @@ $.fn.fn = function(e,notifyChange){
   var col = 0;
   if(parentNodeContents.length > 1)
   {
-    for(i=0;i<parentNodeContents.length && parentNodeContents[i] !== anchorNode;i++)
+    for(var i=0;i<parentNodeContents.length && parentNodeContents[i] !== anchorNode;i++)
     { 
         if(parentNodeContents[i].nodeType == 3)
           col += parentNodeContents[i].nodeValue.length;
@@ -465,7 +470,7 @@ $.fn.fn = function(e,notifyChange){
   var row = currRow.index();
 
   console.log("r:"+row+"c:"+col);
-  text = currRow.contents();
+  var text = currRow.contents();
 
 
   window.row = parseInt(row);
@@ -613,7 +618,8 @@ $.fn.streamChar = function(e,notifyChange)
       author:window.editorID,
       chr: char
     };
-    var currRow = $(window.getSelection().anchorNode).parent().parent();
+    var currRow = $('tr:eq('+parseInt(row)+')');
+
     notifyChange($.fn.indices(currRow,'addChar',paramAddChar,true));
 
     return;
@@ -623,14 +629,14 @@ $.fn.streamChar = function(e,notifyChange)
 
 $.fn.indices = function(currTr,action,func,prev,next) {
 
-   addPrev = (typeof prev == 'undefined' || prev == true)?true:false;
-   addNext = (typeof next == 'undefined' || next == true)?true:false;
+   var addPrev = (typeof prev == 'undefined' || prev == true)?true:false;
+   var addNext = (typeof next == 'undefined' || next == true)?true:false;
 
-   domCurr = currTr.get(0);
-   domNext = (currTr.is(":last-child"))?null:currTr.next().get(0);
+   var domCurr = currTr.get(0);
+   var domNext = (currTr.is(":last-child"))?null:currTr.next().get(0);
 
-   func['prevIndex'] = (typeof domCurr != 'undefined' && addPrev)?currTr.attr('_index'):"null";
-   func['prevSubIndex']= (typeof domCurr != 'undefined' && addPrev)?currTr.attr('_subindex'):"null";
+   func['prevIndex'] = (typeof domCurr != 'undefined' && addPrev)?$(domCurr).attr('_index'):"null";
+   func['prevSubIndex']= (typeof domCurr != 'undefined' && addPrev)?$(domCurr).attr('_subindex'):"null";
    func['nextIndex']= (domNext != null && addNext)?$(domNext).attr('_index'):"null";
    func['nextSubIndex']=(domNext != null && addNext)?$(domNext).attr('_subindex'):"null";
    func['action'] = action;

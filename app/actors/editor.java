@@ -20,6 +20,7 @@ public class editor extends UntypedActor {
     private final ActorRef router;
     private String room;
     private String editorID;
+    private String editorColor;
 
     LoggingAdapter log = Logging.getLogger(getContext().system(), this);
 
@@ -45,6 +46,7 @@ public class editor extends UntypedActor {
                 jsonUtil msg = new jsonUtil("");
                 msg.put("fn","join");
                 msg.put("editorID",this.editorID);
+                msg.put("editorColor",this.editorColor);
                 msg.put("action","join");
                 msg.put("ack","");
                 router.tell(new DistributedPubSubMediator.Publish(this.room, msg.toString()),getSelf());
@@ -72,9 +74,10 @@ public class editor extends UntypedActor {
                         {
                             if(jsonMsg.get("ack") == null)
                             {
+                                 Logger.info("ack join dico a tutti");
                                 String project = (String)jsonMsg.get("project");
                                 String file = (String)jsonMsg.get("file");
-
+                                this.editorColor = (String)jsonMsg.get("editorColor");
                                 this.room = project + " " + file;
                                 this.editorID = (String)jsonMsg.get("editorID");
                                 router.tell(new DistributedPubSubMediator.Subscribe(room, getSelf()), getSelf());
@@ -84,7 +87,9 @@ public class editor extends UntypedActor {
                             {
                                 jsonUtil join = new jsonUtil("");
                                 join.put("editorID",jsonMsg.get("editorID"));
+                                join.put("editorColor",jsonMsg.get("editorColor"));
                                 join.put("fn","join");
+                                Logger.warn("comunico avvenuto join");
                                 socket.tell(join.toString(),self());
                             }
                             break;
@@ -106,6 +111,7 @@ public class editor extends UntypedActor {
                             jsonUtil msg = new jsonUtil("");
                             msg.put("fn","ping");
                             msg.put("editorID",this.editorID);
+                            msg.put("editorColor",this.editorColor);
                             Logger.info("mi annuncio:  " + msg.toString());
                             router.tell(new DistributedPubSubMediator.Publish(this.room, new documentChanges(msg.toString())),getSelf());
                             break;
@@ -125,6 +131,7 @@ public class editor extends UntypedActor {
                         {
                             jsonMsg.put("rd",((Long)jsonMsg.get("r")).toString());
                             Long pos = (Long)jsonMsg.get("c");
+                            pos +=1;
                             jsonMsg.put("cd",pos.toString());
                             break;
                         }
