@@ -1,62 +1,53 @@
 "use strict";
-var app = angular.module('dGogle',['angular-websocket']);
+var ws= null;
+var stream = null;
 
-app.factory('$streamModule',function streamModuleFactory ($websocket) {
+window.onload = function(){
+ ws = new WebSocket('ws://localhost:9001/ws');
+ stream = {
+      send: function(msg){ ws.send(msg);},
+      bye: function(){
+                       console.log("i say ");
+                       ws.send(JSON.stringify({"editorID":window.editorID,
+                                  "action":"leave",
+                                  "project":$("#project").attr("_projectName"),
+                                  "file":$("#file").attr("_fileName")
+                               }));
+                       ws.close();
+                     },
 
-  var ws = $websocket('ws://localhost:9001/ws');
-  var messages = [];
+      registerCallback: function(func){ws.onmessage = func},
+ };
 
-  ws.onOpen(function(){
-    ws.send({"editorID":window.editorID,
-             "action":"join",
-             "editorColor":window.editorColor,
-             "project":$("#project").attr("_projectName"),
-             "file":$("#file").attr("_fileName")});
-  });
+  ws.onopen = function(){
+    ws.send(JSON.stringify({"editorID":window.editorID,
+               "action":"join",
+               "editorColor":window.editorColor,
+               "project":$("#project").attr("_projectName"),
+               "file":$("#file").attr("_fileName")})
+ )};
 
-  var dataStreamClass = {
-    messages : messages,
-    send: function(msg){ ws.send(msg);},
-    bye: function(){
-                     ws.send({  "editorID":window.editorID,
-                                "action":"leave",
-                                "project":$("#project").attr("_projectName"),
-                                "file":$("#file").attr("_fileName")
-                             });
-                     ws.close();
-                   },
-
-    registerCallback: function(func){ws.onMessage(func)},
+ window.onbeforeunload = function (e) {
+         stream.bye();
   };
 
-  return dataStreamClass;
+ window.row=0;
+ window.col=0;
+ window.editorID = String.prototype.makeid(128);
+ window.restoreCaret =[];
 
-});
+ window.randomColor = function () {
+   var letters = '0123456789ABCDEF';
+   var color = '#';
+   for (var i = 0; i < 6; i++ ) {
+      color += letters[Math.floor(Math.random() * 16)];
+   }
+   return color;
+ };
 
-app.run(['$rootScope','$streamModule',function(scope,stream){
+ window.editorColor = randomColor();
 
-   window.onbeforeunload = function (e) {
-     stream.bye();
-   };
-
-   window.row=0;
-   window.col=0;
-   window.editorID = String.prototype.makeid(128);
-
-
-   window.randomColor = function () {
-      var letters = '0123456789ABCDEF';
-      var color = '#';
-      for (var i = 0; i < 6; i++ ) {
-          color += letters[Math.floor(Math.random() * 16)];
-      }
-      return color;
-    };
-
-   window.editorColor = randomColor();
-   $("#editorColor").css("background-color",window.editorColor);
-
-   window.removeVirtualCaret = function(rowID,actionAuthor,action){
+ window.removeVirtualCaret = function(rowID,actionAuthor,action){
 
      if(action != "join" && action != "ping" && action != "leave")
      {
@@ -83,96 +74,139 @@ app.run(['$rootScope','$streamModule',function(scope,stream){
        //creo text node solo testo
        $(currRow).children("td").text(text);
      }
+ }
 
-   }
+ window.restoreCarets = function(data){
+  var virtualCarets = window.restoreCaret;
+  window.restoreCaret = [];
 
-    window.restoreCarets = function(data){
-      var virtualCarets = window.restoreCaret;
-      window.restoreCaret = [];
+  if(data.fn != "join" && data.fn != "ping" && data.fn != "leave"){
 
-      if(data.fn != "join" && data.fn != "ping" && data.fn != "leave"){
+      var currRow = $('tr:eq('+(parseInt(data.r))+')').get(0);
+      var onLeftRealCaret = 0;
 
-          var currRow = $('tr:eq('+(parseInt(data.r))+')').get(0);
-          var onLeftRealCaret = 0;
-
-          for(var i=0; i<virtualCarets.length;i++)
-          {
-               var onLeftCurrentVirtual = 0;
-               var offset = 0;
+      for(var i=0; i<virtualCarets.length;i++)
+      {
+           var onLeftCurrentVirtual = 0;
+           var offset = 0;
 
 
-               if( data.fn == "execAddChar" && (virtualCarets[i].index >= data.c || $(virtualCarets[i].obj).attr("id") == data.author))
-                 offset = 1;
-               else if ((data.fn == "execBackspaceChar" || data.fn == "execCancChar") && (virtualCarets[i].index >= data.c || $(virtualCarets[i].obj).attr("id") == data.author ))
-                 offset = -1;
-               
-               if($(virtualCarets[i].obj).attr("id") == data.author)
-                 virtualCarets[i].index = (parseInt(data.c)) + offset;
-               else    
-                 virtualCarets[i].index += offset ;
-                 
-               onLeftRealCaret += ((virtualCarets[i].index) <= window.col)?1:0;
+           if( data.fn == "execAddChar" && (virtualCarets[i].index >= data.c || $(virtualCarets[i].obj).attr("id") == data.author))
+             offset = 1;
+           else if ((data.fn == "execBackspaceChar" || data.fn == "execCancChar") && (virtualCarets[i].index >= data.c || $(virtualCarets[i].obj).attr("id") == data.author ))
+             offset = -1;
 
-               for(var j = 0 ; j<=i; j++)
-               {
-                 if(virtualCarets[j].index < virtualCarets[i])
-                   onLeftCurrentVirtual++;
-               }
+           if($(virtualCarets[i].obj).attr("id") == data.author)
+             virtualCarets[i].index = (parseInt(data.c)) + offset;
+           else
+             virtualCarets[i].index += offset ;
 
-               if($(virtualCarets[i].obj).attr("id") == data.author)
-                 console.log("set col = " + parseInt(virtualCarets[i].index));
+           onLeftRealCaret += ((virtualCarets[i].index) <= window.col)?1:0;
 
-               window.addCaret(parseInt(data.r),parseInt(virtualCarets[i].index),virtualCarets[i].obj,$(virtualCarets[i].obj).attr("id"),onLeftCurrentVirtual);
-          };
+           for(var j = 0 ; j<=i; j++)
+           {
+             if(virtualCarets[j].index < virtualCarets[i])
+               onLeftCurrentVirtual++;
+           }
 
-          var realCaretIndex = window.col;
-          var offset = 0;
-          if( data.fn == "execAddChar" && realCaretIndex >= data.c)
-            offset = 1;
-          else if ((data.fn == "execBackspaceChar" || data.fn == "execCancChar") && realCaretIndex >= data.c)
-            offset = -1;
+           if($(virtualCarets[i].obj).attr("id") == data.author)
+             console.log("set col = " + parseInt(virtualCarets[i].index));
 
-          window.col = parseInt(realCaretIndex) + parseInt(offset);
+           window.addCaret(parseInt(data.r),parseInt(virtualCarets[i].index),virtualCarets[i].obj,$(virtualCarets[i].obj).attr("id"),onLeftCurrentVirtual);
+      };
 
-          console.log("window owner update focus");
-          $($('tr:eq('+(parseInt(window.row))+')')).focusEditable(parseInt(window.col));
+      var realCaretIndex = window.col;
+      var offset = 0;
+      if( data.fn == "execAddChar" && realCaretIndex >= data.c)
+        offset = 1;
+      else if ((data.fn == "execBackspaceChar" || data.fn == "execCancChar") && realCaretIndex >= data.c)
+        offset = -1;
 
+      window.col = parseInt(realCaretIndex) + parseInt(offset);
+
+      console.log("window owner update focus");
+      $($('tr:eq('+(parseInt(window.row))+')')).focusEditable(parseInt(window.col));
+
+  }
+
+ }
+ window.min = function(a,b){return (a<=b)?a:b;}
+
+ window.appendEmptyTextNode = function(row)
+ {
+   var currRow = $('tr:eq('+(parseInt(row))+')').get(0);
+   var domTD = $(currRow).children("td").get(0);
+   var text = document.createTextNode("");
+   domTD.appendChild(text);
+
+   return text;
+ } 
+
+ window.selectTextNodeOnCol=function(row,col){
+   var currRow = $('tr:eq('+(parseInt(row))+')').get(0);
+   var currTextNode = $(currRow).children("td").contents();
+   var currentLength = 0;
+   var residualLength = col;
+   var currNode = null;
+   if(currTextNode.length >1)
+   {
+      for(var i = 0; i< currTextNode.length; i++)
+      {
+        if(currTextNode[i].nodeType == "3")
+        {
+          currNode = currTextNode[i];
+          currentLength += currTextNode[i].nodeValue.length;
+
+          if(currentLength >= col)
+            return {"textNode":currTextNode[i],"col":residualLength};
+          else
+            residualLength -= currTextNode[i].nodeValue.length;
+        }
       }
-
-    }
-   window.min = function(a,b){return (a<=b)?a:b;}
-   window.selectTextNodeOnCol=function(row,col){
-       var currRow = $('tr:eq('+(parseInt(row))+')').get(0);
-       var currTextNode = $(currRow).children("td").contents();
-       var currentLength = 0;
-       var residualLength = col;
-       var currNode = null;
-       if(currTextNode.length >1)
-       {
-          for(var i = 0; i< currTextNode.length; i++)
-          {
-            if(currTextNode[i].nodeType == "3")
-            {
-              currNode = currTextNode[i];
-              currentLength += currTextNode[i].nodeValue.length;
-
-              if(currentLength >= col)
-                return {"textNode":currTextNode[i],"col":residualLength};
-              else
-                residualLength -= currTextNode[i].nodeValue.length;
-            }
-          }
-          return {"textNode":currNode, "col":currNode.length};
-       }
-       else
-         currTextNode = {"textNode":currTextNode[0],"col":col};
-
-       return currTextNode;
-
+      if(currNode != null)
+        return {"textNode":currNode, "col":currNode.length};
+      else
+        return {"textNode":window.appendEmptyTextNode(row), "col":0};
+        
    }
+   else if(currTextNode.length == 1)
+   {
+     if(currTextNode[0].nodeType != 3)
+     {
+        return {"textNode":window.appendEmptyTextNode(row), "col":0};
+     }
+     else
+       currTextNode = {"textNode":currTextNode[0],"col":col};
+   }else{
+        return {"textNode":window.appendEmptyTextNode(row), "col":0};
+   }
+     
 
+   return currTextNode;
 
-   window.addCaret = function(row,col,caret_,id,color,leftCaret){
+ }
+
+ window.createSelection=function(row,col,selStart,selEnd){
+     var range = document.createRange();
+     var selectTextNode = selectTextNodeOnCol(row,col);
+     var selection = window.getSelection();
+
+     console.log("su questo textnode: " + selectTextNode.textNode + " seleziono da: " + selStart + " fino a : " + selEnd);
+
+     range.selectNode(selectTextNode.textNode);
+     range.setStart(selectTextNode.textNode,selStart);
+     range.setEnd(selectTextNode.textNode,selEnd);
+
+ }
+
+ window.normalizeTextNode = function(row){
+    var currRow = $('tr:eq('+(parseInt(row))+')').get(0);
+    $(currRow).children("td")
+               .contents()
+               .filter(function(){return this.nodeType == 3 && this.nodeValue == "";})
+               .each(function(idx,obj){$(obj).remove();});
+ }
+ window.addCaret = function(row,col,caret_,id,color,leftCaret){
       var caret = caret_;
       var currTextNode = null;
       var currRow = $('tr:eq('+(parseInt(row))+')').get(0);
@@ -193,11 +227,6 @@ app.run(['$rootScope','$streamModule',function(scope,stream){
       col = nodeSelected.col;
       currTextNode = nodeSelected.textNode;
       console.log(currTextNode);
-      
-      if(typeof currTextNode == "undefined")
-      {
-        console.log("undefined");
-      }
 
       range.selectNode(currTextNode);
       range.setStart(currTextNode,min(col,currTextNode.length));
@@ -205,33 +234,30 @@ app.run(['$rootScope','$streamModule',function(scope,stream){
       console.log(caret);
       range.insertNode(caret);
 
-      $(currRow).children("td")
-                .contents()
-                .filter(function(){return this.nodeType == 3 && this.nodeValue == "";})
-                .each(function(idx,obj){$(obj).remove();});
+      window.normalizeTextNode(row);
 
-   }
+ }
 
-   window.viewFn = [];
-   window.viewFn['execEnter1'] = function(param){
+ window.viewFn = [];
+ window.viewFn['execEnter1'] = function(param){
 
-        var currElem = $('tr:eq('+parseInt(param.r)+')');
-        var elem = $(param.elem);
+    var currElem = $('tr:eq('+parseInt(param.r)+')');
+    var elem = $(param.elem);
 
-        elem.insertAfter(currElem)
-            .on('keydown keyup mouseup keypress',function (e){$.fn.fn(e,stream.send);})
-            .on('keypress',function (e){$.fn.streamChar(e,stream.send);})
-            .attr("_subindex",param._subindex)
-            .attr("_index",param._index);
+    elem.insertAfter(currElem)
+        .on('keydown keyup mouseup keypress',function (e){$.fn.fn(e,stream.send);})
+        .on('keypress',function (e){$.fn.streamChar(e,stream.send);})
+        .attr("_subindex",param._subindex)
+        .attr("_index",param._index);
 
-        if(param.author == window.editorID)
-          elem.focusEditable();
-        else if(parseInt(window.row) > parseInt(param.r)) {
-            $($('tr:eq('+(parseInt(window.row)+1)+')').get(0)).focusEditable(parseInt(window.col));
-        }
-   };
+    if(param.author == window.editorID)
+      elem.focusEditable();
+    else if(parseInt(window.row) > parseInt(param.r)) {
+        $($('tr:eq('+(parseInt(window.row)+1)+')').get(0)).focusEditable(parseInt(window.col));
+    }
+ };
 
-   window.viewFn['execEnter2'] = function(param){
+ window.viewFn['execEnter2'] = function(param){
 
       var currRow = $('tr:eq('+parseInt(param.r)+')');
       var elem = $(param.elem);
@@ -255,9 +281,9 @@ app.run(['$rootScope','$streamModule',function(scope,stream){
       } else if(parseInt(window.row) > parseInt(param.r) ){
         $($('tr:eq('+(parseInt(window.row)+1)+')').get(0)).focusEditable((parseInt(window.col)));
       }
-   };
+ };
 
-   window.viewFn["execBackspace"] = function(param){
+ window.viewFn["execBackspace"] = function(param){
 
       var currRow = $($('tr:eq('+(parseInt(param.r))+')').get(0));
       var prevRow = $($('tr:eq('+(parseInt(param.r)-1)+')').get(0));
@@ -270,26 +296,20 @@ app.run(['$rootScope','$streamModule',function(scope,stream){
       if(param.author == window.editorID)
         prevRow.focusEditable(cursorPos);
       else if(parseInt(window.row) == parseInt(param.r) && parseInt(window.col) >= parseInt(param.c)){
-        var row =$('tr:eq('+(parseInt(window.row)-1)+')').get(0); 
+        var row =$('tr:eq('+(parseInt(window.row)-1)+')').get(0);
         $(row).focusEditable(parseInt(parseInt(window.col) + parseInt(cursorPos)));
       }else if(parseInt(window.row) > parseInt(param.r)){
        $($('tr:eq('+(parseInt(window.row)-1)+')').get(0)).focusEditable((parseInt(window.col)));
       }
-   }
+ }
 
-   window.viewFn["execBackspaceChar"] = function(param)
-   {
+ window.viewFn["execBackspaceChar"] = function(param){
       var currRow = $($('tr:eq('+(parseInt(param.r))+')').get(0));
       $(currRow).focusEditable(parseInt(param.c));
-      document.execCommand('delete', false, null);
-      if(param.author != window.editorID)
-      {
-        $($('tr:eq('+(parseInt(window.row))+')').get(0)).focusEditable(parseInt(window.col));
-      }
+      document.execCommand('delete', true, null);
+ }
 
-   }
-
-   window.viewFn['execCanc'] = function(param){
+ window.viewFn['execCanc'] = function(param){
 
       var nextRow = $($('tr:eq('+(parseInt(param.r)+1)+')').get(0));
       var currRow = $($('tr:eq('+(parseInt(param.r))+')').get(0));
@@ -306,8 +326,9 @@ app.run(['$rootScope','$streamModule',function(scope,stream){
       } else if(parseInt(window.row) > parseInt(param.r)) {
         $($('tr:eq('+(parseInt(window.row)-1)+')').get(0)).focusEditable((parseInt(window.col)));
       }
-   }
-   window.viewFn['execCancChar']=function(param){
+ }
+
+ window.viewFn['execCancChar']=function(param){
       var currRow = $($('tr:eq('+(parseInt(param.r))+')').get(0));
       $(currRow).focusEditable(parseInt(param.c+1));
       document.execCommand('delete', false, null);
@@ -315,18 +336,17 @@ app.run(['$rootScope','$streamModule',function(scope,stream){
       {
         $($('tr:eq('+(parseInt(window.row))+')').get(0)).focusEditable(parseInt(window.col));
       }
-   }
+ }
 
-   window.viewFn['execAddChar']=function(param){
+ window.viewFn['execAddChar']=function(param){
      var currRow = $('tr:eq('+parseInt(param.rd)+')');
      var currText = currRow.children("td").text();
      var char = param.chr;
      var newText = currText.substring(0,parseInt(param.c))+char+ currText.substring(parseInt(param.c));
      currRow.children("td").text(newText);
-   }
+ }
 
-   window.viewFn['join'] = function(param)
-   {
+ window.viewFn['join'] = function(param){
 
      if(param.editorID != window.editorID)
      {
@@ -338,29 +358,37 @@ app.run(['$rootScope','$streamModule',function(scope,stream){
         stream.send(JSON.stringify(pingData));
      }
 
-   }
-   window.viewFn['leave'] = function(param){
+ }
+
+ window.viewFn['leave'] = function(param){
 
       $("#"+param.editorID).remove();
-   }
-   window.viewFn['ping'] = function(param){
+ }
+
+ window.viewFn['ping'] = function(param){
      if(param.editorID != window.editorID && typeof $("#" + param.editorID).get(0) == "undefined")
      {
        window.addCaret(0,0,null,param.editorID,param.editorColor,null);
      }
-   }
+ }
 
-   $("#page").documentize(stream.send);
+};
 
-   stream.registerCallback(exec);
+$(document).ready(function(){
 
-}]);
+  $("#editorColor").css("background-color",window.editorColor);
+  $("#page").documentize(stream.send);
+  stream.registerCallback(exec);
+
+});
 
 var exec = function(resp){
     console.log("Server Say: " + resp.data);
     var data = JSON.parse(resp.data);
 
     window.removeVirtualCaret(data.r,data.author,data.fn);
+    window.normalizeTextNode(data.r);
+    
     window.viewFn[data.fn](data);
     window.restoreCarets(data);
 
@@ -378,47 +406,6 @@ String.prototype.makeid = function(len)
     return text;
 }
 
-String.prototype.hashCode = function() {
-  var hash = 0, i, chr, len;
-  if (this.length === 0) return hash;
-  for (i = 0, len = this.length; i < len; i++) {
-    chr   = this.charCodeAt(i);
-    hash  = ((hash << 5) - hash) + chr;
-    hash |= 0; // Convert to 32bit integer
-  }
-  return hash;
-};
-
-var countLeftCaret = function(node,pivot){
-  var tdString = caretToString(node,"|");
-  var str = tdString.substring(0,parseInt(pivot)+1);
-  return (str.match(/\|/g)||[]).length;
-
-}
-
-var caretToString = function(node,char)
-{
-  char = (typeof char == 'undefined')?"|":char;
-
-  var currTextNode = $(node).contents();
-  var tdString = "";
-
-  if(currTextNode.length >1)
-  {
-    for(var i = 0; i< currTextNode.length; i++)
-    {
-      var obj = currTextNode[i];
-      if(obj.nodeType == 3)
-      {
-        tdString += obj.nodeValue;
-      }
-      else tdString += char;
-    };
-  }
-  return tdString;
-}
-
-
 
 $.fn.focusEditable = function(col)
 {
@@ -426,13 +413,13 @@ $.fn.focusEditable = function(col)
   var currRow = $(this).children("td");
 
   var selectedNode = selectTextNodeOnCol($(this).index(),col);
-  var col  = selectedNode.col;
+  var c  = selectedNode.col;
   var currTextNode = selectedNode.textNode;
  
   var s = window.getSelection();
   var r = document.createRange();
 
-  if(currTextNode.length != 0){
+  if(typeof currTextNode != "undefined" && currTextNode.length != 0){
 
     var actualLength =  currTextNode.length;
     r.setStart(currTextNode, min(c,actualLength));
@@ -452,7 +439,7 @@ $.fn.fn = function(e,notifyChange){
   var anchorNode = window.getSelection().anchorNode;
   var parentNode = anchorNode.parentNode;
   var parentNodeContents = $(parentNode).contents();
-  var leftCaret = countLeftCaret
+  //var leftCaret = countLeftCaret
   var anchorOffset = window.getSelection().anchorOffset;
 
   var col = 0;
@@ -481,7 +468,7 @@ $.fn.fn = function(e,notifyChange){
      if(e.type == "keyup")
        switch(e.keyCode){
 
-         case 8:  {e.preventDefault(); break;} //backspace
+         case 8:  {console.log("sono in keyup handleer" + e.which); console.log("cancellabile: " + e.cancelable); e.stopImmediatePropagation(); e.preventDefault(); return false;} //backspace
          case 13: {e.preventDefault(); break;} // enter
          case 46: {e.preventDefault(); break;} // canc
          case 38: { if($(currRow).is(":first-child")) return; currRow.prev().focusEditable(col); break;} //arrow up
@@ -524,7 +511,7 @@ $.fn.fn = function(e,notifyChange){
           }
           case 8:
           {
-            e.preventDefault();
+            console.log("sono in keydown handleer" + e.which);
 
             //var currRow = $(window.getSelection().anchorNode).parent().parent();
             if(col > 0)
@@ -539,25 +526,24 @@ $.fn.fn = function(e,notifyChange){
 
                };
                notifyChange($.fn.indices(currRow,'removeChar',paramBackspaceChar,true,false));
-
             }
             else
             {
-              if(currRow.is(":first-child")) return;
-              var paramBackspace = {
-                fn: "execBackspace",
-                r: row,
-                c: col,
-                author:window.editorID
-              };
+              if(!currRow.is(":first-child"))
+              {
+                var paramBackspace = {
+                    fn: "execBackspace",
+                    r: row,
+                    c: col,
+                    author:window.editorID
+                };
 
-              notifyChange($.fn.indices(currRow,'removeRow',paramBackspace,true,false));
+                notifyChange($.fn.indices(currRow,'removeRow',paramBackspace,true,false));
+              }
 
-              return;
             }
-
-
-
+            e.stopImmediatePropagation(); e.preventDefault();
+            return false;
           }
           case 46:
           {
@@ -605,6 +591,8 @@ $.fn.fn = function(e,notifyChange){
 
 $.fn.streamChar = function(e,notifyChange)
 {
+  console.log("sono in keypress handleer" + e.which);
+
   if(e.type=="keypress" && e.which !== 0 && !e.ctrlKey && !e.metaKey && !e.altKey)
   {
     e.preventDefault();
