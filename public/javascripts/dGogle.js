@@ -410,8 +410,8 @@ var exec = function(resp){
            $(authorCaret).remove();
            window.addCaret(data.r,data.c,authorCaret.get(0),data.author);
         }
-        var currRow = $($('tr:eq('+(parseInt(window.row))+')').get(0));
-        $(currRow).focusEditable(parseInt(window.col));
+        var currRow = $($('tr:eq('+(parseInt(data.r))+')').get(0));
+        $(currRow).focusEditable(parseInt(data.c));
         break;
       }
       default:{
@@ -490,7 +490,6 @@ $.fn.fn = function(e,notifyChange){
   console.log("r:"+row+"c:"+col);
   var text = window.getText(row);
 
-
   window.row = parseInt(row);
   window.col = parseInt(col);
 
@@ -507,11 +506,11 @@ $.fn.fn = function(e,notifyChange){
        notifyChange(JSON.stringify(streamPos));
   }
 
+
   if(e.type == "keyup" || e.type == "keydown")
   {
      if(e.type == "keyup")
        switch(e.keyCode){
-
          case 8:  {e.stopImmediatePropagation(); e.preventDefault(); return false;} //backspace
          case 13: {e.preventDefault(); break;} // enter
          case 46: {e.preventDefault(); break;} // canc
@@ -521,8 +520,47 @@ $.fn.fn = function(e,notifyChange){
 
        }
 
+     console.log(e.keyCode);
      if(e.type == "keydown")
        switch(e.keyCode){
+          case 39: //right arrow
+          {
+            var streamPos = {
+                    'fn':'execUpdatePosition',
+                    'r':row,
+                    'c':col+1,
+                    'author':window.editorID,
+                    'action':'updatePosition'
+            };
+
+            if(col < text.length)
+            {
+              notifyChange(JSON.stringify(streamPos));
+              window.col = streamPos.c;
+            }
+
+            e.preventDefault();
+            return false;
+          }
+          case 37: //left arrow
+          {
+              var streamPos = {
+                      'fn':'execUpdatePosition',
+                      'r':row,
+                      'c':col-1,
+                      'author':window.editorID,
+                      'action':'updatePosition'
+              };
+
+              if(col > 0)
+              {
+                notifyChange(JSON.stringify(streamPos));
+                window.col = streamPos.c;
+              }
+
+              e.preventDefault();
+              return false;
+          }
           case 13:
           { //enter
             e.preventDefault();
