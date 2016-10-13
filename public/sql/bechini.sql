@@ -3,7 +3,7 @@
 -- http://www.phpmyadmin.net
 --
 -- Host: localhost
--- Generation Time: Ott 08, 2016 alle 19:37
+-- Generation Time: Ott 13, 2016 alle 19:32
 -- Versione del server: 5.5.52-0+deb8u1
 -- PHP Version: 5.6.24-0+deb8u1
 
@@ -28,6 +28,7 @@ USE `bechini`;
 -- Struttura della tabella `character`
 --
 
+DROP TABLE IF EXISTS `character`;
 CREATE TABLE IF NOT EXISTS `character` (
   `paragraph` int(11) NOT NULL,
   `idx` int(11) NOT NULL,
@@ -40,7 +41,9 @@ CREATE TABLE IF NOT EXISTS `character` (
 --
 
 INSERT INTO `character` (`paragraph`, `idx`, `subindex`, `value`) VALUES
-(1, 1, 1, 'A');
+(1, 1, 1, 'A'),
+(2, 0, 1, 'B'),
+(2, 0, 3, 'C');
 
 -- --------------------------------------------------------
 
@@ -48,18 +51,21 @@ INSERT INTO `character` (`paragraph`, `idx`, `subindex`, `value`) VALUES
 -- Struttura della tabella `files`
 --
 
+DROP TABLE IF EXISTS `files`;
 CREATE TABLE IF NOT EXISTS `files` (
 `id` int(11) NOT NULL,
   `project` int(11) NOT NULL,
-  `name` int(11) NOT NULL
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=latin1;
+  `name` varchar(11) NOT NULL
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=latin1;
 
 --
 -- Dump dei dati per la tabella `files`
 --
 
 INSERT INTO `files` (`id`, `project`, `name`) VALUES
-(1, 1, 0);
+(1, 1, '0'),
+(4, 1, '0'),
+(5, 1, 'fffff');
 
 -- --------------------------------------------------------
 
@@ -67,19 +73,22 @@ INSERT INTO `files` (`id`, `project`, `name`) VALUES
 -- Struttura della tabella `paragraph`
 --
 
+DROP TABLE IF EXISTS `paragraph`;
 CREATE TABLE IF NOT EXISTS `paragraph` (
 `id` int(11) NOT NULL,
   `file` int(11) NOT NULL,
   `idx` int(11) NOT NULL,
   `subindex` int(11) NOT NULL
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=latin1;
 
 --
 -- Dump dei dati per la tabella `paragraph`
 --
 
 INSERT INTO `paragraph` (`id`, `file`, `idx`, `subindex`) VALUES
-(1, 1, 1, 1);
+(1, 1, 1, 1),
+(2, 5, 0, 1),
+(4, 5, 0, 7);
 
 -- --------------------------------------------------------
 
@@ -87,6 +96,7 @@ INSERT INTO `paragraph` (`id`, `file`, `idx`, `subindex`) VALUES
 -- Struttura della tabella `projects`
 --
 
+DROP TABLE IF EXISTS `projects`;
 CREATE TABLE IF NOT EXISTS `projects` (
 `id` int(11) NOT NULL,
   `name` varchar(50) NOT NULL
@@ -113,13 +123,13 @@ ALTER TABLE `character`
 -- Indexes for table `files`
 --
 ALTER TABLE `files`
- ADD PRIMARY KEY (`id`,`project`), ADD UNIQUE KEY `id` (`id`), ADD UNIQUE KEY `project` (`project`), ADD KEY `id_2` (`id`), ADD KEY `name` (`name`);
+ ADD PRIMARY KEY (`id`,`project`), ADD UNIQUE KEY `id_2` (`id`), ADD KEY `name` (`name`), ADD KEY `project` (`project`);
 
 --
 -- Indexes for table `paragraph`
 --
 ALTER TABLE `paragraph`
- ADD PRIMARY KEY (`id`,`idx`,`subindex`), ADD UNIQUE KEY `id` (`id`), ADD UNIQUE KEY `file` (`file`), ADD KEY `idx` (`idx`), ADD KEY `subindex` (`subindex`);
+ ADD PRIMARY KEY (`id`,`idx`,`subindex`), ADD UNIQUE KEY `id` (`id`), ADD KEY `idx` (`idx`), ADD KEY `subindex` (`subindex`), ADD KEY `file` (`file`);
 
 --
 -- Indexes for table `projects`
@@ -135,12 +145,12 @@ ALTER TABLE `projects`
 -- AUTO_INCREMENT for table `files`
 --
 ALTER TABLE `files`
-MODIFY `id` int(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=2;
+MODIFY `id` int(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=6;
 --
 -- AUTO_INCREMENT for table `paragraph`
 --
 ALTER TABLE `paragraph`
-MODIFY `id` int(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=2;
+MODIFY `id` int(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=5;
 --
 -- AUTO_INCREMENT for table `projects`
 --
