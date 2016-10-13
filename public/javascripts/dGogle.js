@@ -36,6 +36,7 @@ window.onload = function(){
  window.restoreCaret =[];
  window.caret = "<div class=\"caret\" z-index=\"100\">|</div>";
  window.elementRow = "<tr><td contenteditable=\"true\"></td></tr>";
+ window.viewFn = [];
 
  window.randomColor = function () {
    var letters = '0123456789ABCDEF';
@@ -64,32 +65,33 @@ window.onload = function(){
    return text;
 
  }
- window.removeVirtualCaret = function(rowID,actionAuthor,action){
+ window.removeVirtualCaret = function(actionAuthor,action){
 
      if(action != "join" && action != "ping" && action != "leave")
      {
-       var currRow = $('tr:eq('+(parseInt(rowID))+')').get(0);
-       var text = "";
-       var nodes = $(currRow).children("td").contents();
+       $(window.documentized).find("tr").each(function(rowID,currRow){
+         var text = "";
+         var nodes = $(currRow).children("td").contents();
 
-       var obj = null;
-       for(var i=0;i<nodes.length; i++){
-         obj = nodes[i];
-         //nodo tipo testo
-         if(obj.nodeType == 3)
-         {
-           text += obj.nodeValue;
+         var obj = null;
+         for(var i=0;i<nodes.length; i++){
+          obj = nodes[i];
+          //nodo tipo testo
+          if(obj.nodeType == 3)
+          {
+            text += obj.nodeValue;
+          }
+          //salvo le posizioni di tutti i caret virtuali
+          else
+          {
+             window.restoreCaret.push({"index": text.length,"obj":obj, "row":rowID});
+             $(obj).remove();
+          }
          }
-         //salvo le posizioni di tutti i caret virtuali
-         else
-         {
-            window.restoreCaret.push({"index": text.length,"obj":obj, "row":rowID});
-            $(obj).remove();
-         }
-       }
 
-       //creo text node solo testo
-       $(currRow).children("td").text(text);
+         //creo text node solo testo
+         $(currRow).children("td").text(text);
+       });
      }
  }
 
@@ -99,37 +101,9 @@ window.onload = function(){
 
   if(data.fn != "join" && data.fn != "ping" && data.fn != "leave"){
 
-      //var currRow = $('tr:eq('+(parseInt(data.r))+')').get(0);
-
-
       for(var i=0; i<virtualCarets.length;i++)
-      {
-           var offset = 0;
-
-           if( data.fn == "execAddChar" && (virtualCarets[i].index >= data.c || $(virtualCarets[i].obj).attr("id") == data.author))
-             offset = 1;
-           else if ((data.fn == "execBackspaceChar") && (virtualCarets[i].index >= data.c || $(virtualCarets[i].obj).attr("id") == data.author ))
-             offset = -1;
-
-           if(data.fn == "execAddChar" || data.fn=="execBackspaceChar" || data.fn == "execCancChar"){
-            if($(virtualCarets[i].obj).attr("id") == data.author)
-             virtualCarets[i].index = (parseInt(data.c)) + offset;
-            else
-             virtualCarets[i].index += offset ; 
-           }    
-           
-
            window.addCaret(virtualCarets[i].row,parseInt(virtualCarets[i].index),virtualCarets[i].obj,$(virtualCarets[i].obj).attr("id"));
-      };
 
-      var realCaretIndex = window.col;
-      var offset = 0;
-      if( data.fn == "execAddChar" && realCaretIndex >= data.c)
-        offset = 1;
-      else if ((data.fn == "execBackspaceChar") && realCaretIndex >= data.c)
-        offset = -1;
-
-      window.col = parseInt(realCaretIndex) + parseInt(offset);
 
       $($('tr:eq('+(parseInt(window.row))+')')).focusEditable(parseInt(window.col));
 
@@ -240,7 +214,6 @@ window.onload = function(){
     return retCarets;
   }
 
- window.viewFn = [];
  window.viewFn['execEnter1'] = function(param){
 
     var currElem = $('tr:eq('+parseInt(param.r)+')');
@@ -253,22 +226,18 @@ window.onload = function(){
         .attr("_index",param._index);
 
 
-    //update real caret coords if required and virtual carets
-    if(param.author == window.editorID){
-      window.col = 0;
-      window.row = parseInt(param.r)+1;
-    } else {
-      var rightCarets = window.findRightVirtualCaret(param.r,param.c);
-      for(var i = 0; i< rightCarets.length; i++)
-      {
-        window.restoreCaret[i].row++;
-        window.restoreCaret[i].index = 0;
-      }
-      
-      var virtualCaretAuthor = findVirtualCaret(param.author);
-      window.restoreCaret[virtualCaretAuthor].row++;
+    //update real caret
+    if((window.row == param.r && window.col >= param.c) || window.row > param.r){
+      window.col = window.col - parseInt(param.c)
+      window.row++;
     }
-
+    //update virtual carets
+    for(var i=0; i<restoreCaret.length;i++){
+      if((restoreCaret[i].row == param.r && restoreCaret[i].index >= param.c) || restoreCaret[i].row > param.r){
+        restoreCaret[i].index = restoreCaret[i].index - parseInt(parse.c);
+        restoreCaret[i].row++;
+      }
+    }
  };
 
  window.viewFn['execEnter2'] = function(param){
@@ -301,48 +270,68 @@ window.onload = function(){
 
  window.viewFn["execBackspace"] = function(param){
 
-      var currRow = $($('tr:eq('+(parseInt(param.r))+')').get(0));
-      var prevRow = $($('tr:eq('+(parseInt(param.r)-1)+')').get(0));
-      var cursorPos = prevRow.children("td").text().length;
-      var text = currRow.children("td").text();
+      var text = window.getText(param.r);
+      var text_before = window.getText(parseInt(param.r)-1);
 
-      prevRow.children("td").text(prevRow.children("td").text() + text);
-      currRow.remove();
+      $('tr:eq('+(parseInt(param.r))+')').remove();
+      $('tr:eq('+(parseInt(param.r)-1)+')').children("td").text(text_before+text);
 
-      if(param.author == window.editorID)
-        prevRow.focusEditable(cursorPos);
-      else if(parseInt(window.row) == parseInt(param.r) && parseInt(window.col) >= parseInt(param.c)){
-        var row =$('tr:eq('+(parseInt(window.row)-1)+')').get(0);
-        $(row).focusEditable(parseInt(parseInt(window.col) + parseInt(cursorPos)));
-      }else if(parseInt(window.row) > parseInt(param.r)){
-       $($('tr:eq('+(parseInt(window.row)-1)+')').get(0)).focusEditable((parseInt(window.col)));
+      //update real caret
+      if((window.row == param.r && window.col >= param.c) || window.row > param.r){
+          window.col =(parseInt(window.row) == parseInt(param.r))?(text_before.length + parseInt(param.c)):window.col;
+          window.row--;
       }
+      //update virtual carets
+      for(var i=0; i<restoreCaret.length;i++){
+          if((restoreCaret[i].row == param.r && restoreCaret[i].index >= param.c) || restoreCaret[i].row > param.r){
+            restoreCaret[i].index = (parseInt(restoreCaret[i].row) == parseInt(param.r))?(text_before.length + parseInt(param.c)):restoreCaret[i].index;
+            restoreCaret[i].row--;
+          }
+      }
+
  }
 
  window.viewFn["execBackspaceChar"] = function(param){
       var currRow = $($('tr:eq('+(parseInt(param.r))+')').get(0));
       $(currRow).focusEditable(parseInt(param.c));
       document.execCommand('delete', true, null);
+
+      var virtualCarets = window.restoreCaret;
+      for(var i=0; i<virtualCarets.length;i++)
+      {
+           if(virtualCarets[i].row == parseInt(param.r))
+           {
+             var offset = (virtualCarets[i].index >= param.c || $(virtualCarets[i].obj).attr("id") == param.author)?-1:0;
+             if($(virtualCarets[i].obj).attr("id") == param.author)
+                virtualCarets[i].index = (parseInt(param.c)) + offset;
+               else
+                virtualCarets[i].index += offset ;
+           }
+      }
+      window.col = (window.col >= param.c && window.row == param.r)?window.col-1:window.col;
  }
 
  window.viewFn['execCanc'] = function(param){
 
-      var nextRow = $($('tr:eq('+(parseInt(param.r)+1)+')').get(0));
-      var currRow = $($('tr:eq('+(parseInt(param.r))+')').get(0));
-      var cursorPos = currRow.children("td").text().length;
-      var text = nextRow.children("td").text();
+      var nextText = window.getText(parseInt(param.r)+1);
+      var currText = window.getText(parseInt(param.r));
+      $('tr:eq('+(parseInt(param.r))+')').children("td").text(currText + nextText);
+      $('tr:eq('+(parseInt(param.r)+1)+')').remove();
 
-      currRow.children("td").text(currRow.children("td").text() + text);
-      nextRow.remove();
-
-      if(window.editorID == param.author){
-        currRow.focusEditable(cursorPos);
-      } else if(parseInt(window.row) == parseInt(param.r)){
-        $($('tr:eq('+parseInt(window.row)+')').get(0)).focusEditable((parseInt(window.col)));
-      } else if(parseInt(window.row) > parseInt(param.r)) {
-        $($('tr:eq('+(parseInt(window.row)-1)+')').get(0)).focusEditable((parseInt(window.col)));
+      //update real caret
+      if((window.row == param.r && window.col >= param.c) || window.row > param.r){
+            window.col =(parseInt(window.row) == parseInt(param.r))?window.col:currText.length;
+            window.row--;
       }
- }
+
+      //update virtual carets
+      for(var i=0; i<restoreCaret.length;i++){
+            if((restoreCaret[i].row == param.r && restoreCaret[i].index >= param.c) || restoreCaret[i].row > param.r){
+              restoreCaret[i].index = (parseInt(restoreCaret[i].row) == parseInt(param.r))?restoreCaret[i].index:currText.length;
+              restoreCaret[i].row--;
+            }
+      }
+}
 
  window.viewFn['execCancChar']=function(param){
       var currRow = $($('tr:eq('+(parseInt(param.r))+')').get(0));
@@ -356,6 +345,20 @@ window.onload = function(){
      var char = param.chr;
      var newText = currText.substring(0,parseInt(param.c))+char+ currText.substring(parseInt(param.c));
      currRow.children("td").text(newText);
+
+     var virtualCarets = window.restoreCaret; 
+     for(var i=0; i<virtualCarets.length;i++)
+     {
+         if(virtualCarets[i].row == parseInt(param.r))
+         {
+           var offset = (virtualCarets[i].index >= param.c || $(virtualCarets[i].obj).attr("id") == param.author)?1:0;
+           if($(virtualCarets[i].obj).attr("id") == param.author)
+              virtualCarets[i].index = (parseInt(param.c)) + offset;
+             else
+              virtualCarets[i].index += offset ;
+         }
+     }
+     window.col = (window.col >= param.c && window.row == param.r)?window.col+1:window.col;
  }
 
  window.viewFn['join'] = function(param){
@@ -412,13 +415,12 @@ var exec = function(resp){
         break;
       }
       default:{
-        window.removeVirtualCaret(data.r,data.author,data.fn);
+        window.removeVirtualCaret(data.editorID,data.fn);
         window.normalizeTextNode(data.r);
         window.viewFn[data.fn](data);
         window.restoreCarets(data);
       }
     }
-
 }
 
 
@@ -474,6 +476,10 @@ $.fn.fn = function(e,notifyChange){
     { 
         if(parentNodeContents[i] !== anchorNode && parentNodeContents[i].nodeType == 3)
           col += parentNodeContents[i].nodeValue.length;
+        else 
+          if(parentNodeContents[i] === anchorNode)
+            break;
+            
     }
   }
   
