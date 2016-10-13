@@ -126,13 +126,21 @@ public class editor extends UntypedActor {
                 {
                     switch((String)jsonMsg.get("action"))
                     {
+                        case "updatePosition":
                         case "addChar":
                         case "removeChar":
                         {
-                            jsonMsg.put("rd",((Long)jsonMsg.get("r")).toString());
-                            Long pos = (Long)jsonMsg.get("c");
-                            pos +=1;
-                            jsonMsg.put("cd",pos.toString());
+                            break;
+                        }
+                        case "addRowNoMoveText":
+                        {
+                            jsonMsg.put("_subindex","0");
+                            jsonMsg.put("_index","0");
+                            break;
+                        }
+                        case "addRowMoveText": {
+                            jsonMsg.put("_subindex","0");
+                            jsonMsg.put("_index","0");
                             break;
                         }
                         case "removeRow":

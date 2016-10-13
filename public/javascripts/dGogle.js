@@ -7,7 +7,6 @@ window.onload = function(){
  stream = {
       send: function(msg){ ws.send(msg);},
       bye: function(){
-                       console.log("i say ");
                        ws.send(JSON.stringify({"editorID":window.editorID,
                                   "action":"leave",
                                   "project":$("#project").attr("_projectName"),
@@ -35,6 +34,8 @@ window.onload = function(){
  window.col=0;
  window.editorID = String.prototype.makeid(128);
  window.restoreCaret =[];
+ window.caret = "<div class=\"caret\" z-index=\"100\">|</div>";
+ window.elementRow = "<tr><td contenteditable=\"true\"></td></tr>";
 
  window.randomColor = function () {
    var letters = '0123456789ABCDEF';
@@ -46,7 +47,23 @@ window.onload = function(){
  };
 
  window.editorColor = randomColor();
+ window.getText = function(row)
+ {
+   var currRow = $('tr:eq('+(parseInt(row))+')').get(0);
+   var text = "";
+   var nodes = $(currRow).children("td").contents();
 
+   for(var i=0;i<nodes.length; i++){
+        //nodo tipo testo
+        if(nodes[i].nodeType == 3)
+        {
+          text += nodes[i].nodeValue;
+        }
+   }
+
+   return text;
+
+ }
  window.removeVirtualCaret = function(rowID,actionAuthor,action){
 
      if(action != "join" && action != "ping" && action != "leave")
@@ -66,7 +83,7 @@ window.onload = function(){
          //salvo le posizioni di tutti i caret virtuali
          else
          {
-            window.restoreCaret.push({"index": text.length,"obj":obj});
+            window.restoreCaret.push({"index": text.length,"obj":obj, "row":rowID});
             $(obj).remove();
          }
        }
@@ -82,49 +99,38 @@ window.onload = function(){
 
   if(data.fn != "join" && data.fn != "ping" && data.fn != "leave"){
 
-      var currRow = $('tr:eq('+(parseInt(data.r))+')').get(0);
-      var onLeftRealCaret = 0;
+      //var currRow = $('tr:eq('+(parseInt(data.r))+')').get(0);
+
 
       for(var i=0; i<virtualCarets.length;i++)
       {
-           var onLeftCurrentVirtual = 0;
            var offset = 0;
-
 
            if( data.fn == "execAddChar" && (virtualCarets[i].index >= data.c || $(virtualCarets[i].obj).attr("id") == data.author))
              offset = 1;
-           else if ((data.fn == "execBackspaceChar" || data.fn == "execCancChar") && (virtualCarets[i].index >= data.c || $(virtualCarets[i].obj).attr("id") == data.author ))
+           else if ((data.fn == "execBackspaceChar") && (virtualCarets[i].index >= data.c || $(virtualCarets[i].obj).attr("id") == data.author ))
              offset = -1;
 
-           if($(virtualCarets[i].obj).attr("id") == data.author)
+           if(data.fn == "execAddChar" || data.fn=="execBackspaceChar" || data.fn == "execCancChar"){
+            if($(virtualCarets[i].obj).attr("id") == data.author)
              virtualCarets[i].index = (parseInt(data.c)) + offset;
-           else
-             virtualCarets[i].index += offset ;
+            else
+             virtualCarets[i].index += offset ; 
+           }    
+           
 
-           onLeftRealCaret += ((virtualCarets[i].index) <= window.col)?1:0;
-
-           for(var j = 0 ; j<=i; j++)
-           {
-             if(virtualCarets[j].index < virtualCarets[i])
-               onLeftCurrentVirtual++;
-           }
-
-           if($(virtualCarets[i].obj).attr("id") == data.author)
-             console.log("set col = " + parseInt(virtualCarets[i].index));
-
-           window.addCaret(parseInt(data.r),parseInt(virtualCarets[i].index),virtualCarets[i].obj,$(virtualCarets[i].obj).attr("id"),onLeftCurrentVirtual);
+           window.addCaret(virtualCarets[i].row,parseInt(virtualCarets[i].index),virtualCarets[i].obj,$(virtualCarets[i].obj).attr("id"));
       };
 
       var realCaretIndex = window.col;
       var offset = 0;
       if( data.fn == "execAddChar" && realCaretIndex >= data.c)
         offset = 1;
-      else if ((data.fn == "execBackspaceChar" || data.fn == "execCancChar") && realCaretIndex >= data.c)
+      else if ((data.fn == "execBackspaceChar") && realCaretIndex >= data.c)
         offset = -1;
 
       window.col = parseInt(realCaretIndex) + parseInt(offset);
 
-      console.log("window owner update focus");
       $($('tr:eq('+(parseInt(window.row))+')')).focusEditable(parseInt(window.col));
 
   }
@@ -186,19 +192,6 @@ window.onload = function(){
 
  }
 
- window.createSelection=function(row,col,selStart,selEnd){
-     var range = document.createRange();
-     var selectTextNode = selectTextNodeOnCol(row,col);
-     var selection = window.getSelection();
-
-     console.log("su questo textnode: " + selectTextNode.textNode + " seleziono da: " + selStart + " fino a : " + selEnd);
-
-     range.selectNode(selectTextNode.textNode);
-     range.setStart(selectTextNode.textNode,selStart);
-     range.setEnd(selectTextNode.textNode,selEnd);
-
- }
-
  window.normalizeTextNode = function(row){
     var currRow = $('tr:eq('+(parseInt(row))+')').get(0);
     $(currRow).children("td")
@@ -206,8 +199,7 @@ window.onload = function(){
                .filter(function(){return this.nodeType == 3 && this.nodeValue == "";})
                .each(function(idx,obj){$(obj).remove();});
  }
- window.addCaret = function(row,col,caret_,id,color,leftCaret){
-      var caret = caret_;
+ window.addCaret = function(row,col,caret,id,color){
       var currTextNode = null;
       var currRow = $('tr:eq('+(parseInt(row))+')').get(0);
       var range = document.createRange();
@@ -215,71 +207,95 @@ window.onload = function(){
       if( caret == null)
       {
 
-        caret = $.parseHTML("<div class=\"caret\" z-index=\"100\">|</div>");
+        caret = $.parseHTML(window.caret);
         $(caret).attr("id",id);
         $(caret).css("color",color);
         caret = $(caret).get(0);
       }
 
-
       var nodeSelected = selectTextNodeOnCol(row,col);
 
       col = nodeSelected.col;
       currTextNode = nodeSelected.textNode;
-      console.log(currTextNode);
 
       range.selectNode(currTextNode);
       range.setStart(currTextNode,min(col,currTextNode.length));
       range.setEnd(currTextNode,min(col,currTextNode.length));
-      console.log(caret);
       range.insertNode(caret);
 
       window.normalizeTextNode(row);
 
  }
 
+ window.findVirtualCaret = function(id){
+   for(var i=0; i<window.restoreCaret.length; i++)
+     if($(window.restoreCaret[i].obj).attr("id") == id) return i;
+ }
+
+ window.findRightVirtualCaret = function(row,col){
+    var retCarets = [];
+    for(var i=0; i<window.restoreCaret.length; i++)
+      if(window.restoreCaret[i].row == row && window.restoreCaret[i].index > col) retCarets.push(i);
+
+    return retCarets;
+  }
+
  window.viewFn = [];
  window.viewFn['execEnter1'] = function(param){
 
     var currElem = $('tr:eq('+parseInt(param.r)+')');
-    var elem = $(param.elem);
-
-    elem.insertAfter(currElem)
+    var elem = $.parseHTML(window.elementRow);
+   
+    $(elem).insertAfter(currElem)
         .on('keydown keyup mouseup keypress',function (e){$.fn.fn(e,stream.send);})
         .on('keypress',function (e){$.fn.streamChar(e,stream.send);})
         .attr("_subindex",param._subindex)
         .attr("_index",param._index);
 
-    if(param.author == window.editorID)
-      elem.focusEditable();
-    else if(parseInt(window.row) > parseInt(param.r)) {
-        $($('tr:eq('+(parseInt(window.row)+1)+')').get(0)).focusEditable(parseInt(window.col));
+
+    //update real caret coords if required and virtual carets
+    if(param.author == window.editorID){
+      window.col = 0;
+      window.row = parseInt(param.r)+1;
+    } else {
+      var rightCarets = window.findRightVirtualCaret(param.r,param.c);
+      for(var i = 0; i< rightCarets.length; i++)
+      {
+        window.restoreCaret[i].row++;
+        window.restoreCaret[i].index = 0;
+      }
+      
+      var virtualCaretAuthor = findVirtualCaret(param.author);
+      window.restoreCaret[virtualCaretAuthor].row++;
     }
+
  };
 
  window.viewFn['execEnter2'] = function(param){
 
       var currRow = $('tr:eq('+parseInt(param.r)+')');
-      var elem = $(param.elem);
-      var text = currRow.text();
+      var elem = $.parseHTML(window.elementRow);
+      var text = getText(param.r);
 
-      var text =  currRow.text();
-      currRow.children().text(text.substr(0,parseInt(param.c)));
+      currRow.children("td").text(text.substr(0,parseInt(param.c)));
 
-      elem.children().text(text.substr(parseInt(param.c)));
-      elem.insertAfter(currRow)
-          .on('keydown keyup mouseup',function (e){$.fn.fn(e,stream.send);})
-          .attr("_subindex",param._subindex)
-          .attr("_index",param._index);
+      $(elem).children("td").text(text.substr(parseInt(param.c)));
+      $(elem).insertAfter(currRow)
+             .on('keydown keyup mouseup',function (e){$.fn.fn(e,stream.send);})
+             .attr("_subindex",param._subindex)
+             .attr("_index",param._index);
 
-      if(param.author == window.editorID)
-        elem.focusEditable();
-      else if(parseInt(window.col) >= parseInt(param.c) && parseInt(window.row) == parseInt(param.r)){
-        var row = $('tr:eq('+(parseInt(window.row)+1)+')').get(0);
-        var idx = parseInt(window.col) - parseInt(param.c);
-        $(row).focusEditable(idx);
-      } else if(parseInt(window.row) > parseInt(param.r) ){
-        $($('tr:eq('+(parseInt(window.row)+1)+')').get(0)).focusEditable((parseInt(window.col)));
+      //update real caret
+      if((window.row == param.r && window.col >= param.c) || window.row > param.r){
+        window.col =(parseInt(window.row) == parseInt(param.r))?(parseInt(window.col) - parseInt(param.c)):window.col;
+        window.row++;
+      }
+      //update virtual carets
+      for(var i=0; i<restoreCaret.length;i++){
+        if((restoreCaret[i].row == param.r && restoreCaret[i].index >= param.c) || restoreCaret[i].row > param.r){
+          restoreCaret[i].index = (parseInt(restoreCaret[i].row) == parseInt(param.r))?(parseInt(restoreCaret[i].index) - parseInt(param.c)):restoreCaret[i].index;
+          restoreCaret[i].row++;
+        }
       }
  };
 
@@ -332,14 +348,10 @@ window.onload = function(){
       var currRow = $($('tr:eq('+(parseInt(param.r))+')').get(0));
       $(currRow).focusEditable(parseInt(param.c+1));
       document.execCommand('delete', false, null);
-      if(param.author != window.editorID)
-      {
-        $($('tr:eq('+(parseInt(window.row))+')').get(0)).focusEditable(parseInt(window.col));
-      }
  }
 
  window.viewFn['execAddChar']=function(param){
-     var currRow = $('tr:eq('+parseInt(param.rd)+')');
+     var currRow = $('tr:eq('+parseInt(param.r)+')');
      var currText = currRow.children("td").text();
      var char = param.chr;
      var newText = currText.substring(0,parseInt(param.c))+char+ currText.substring(parseInt(param.c));
@@ -353,7 +365,7 @@ window.onload = function(){
         var pingData = {"action":"ping","editorID": window.editorID, "editorColor": window.editorColor};
 
         if(typeof $("#" + param.editorID).get(0) == "undefined")
-          window.addCaret(0,0,null,param.editorID,param.editorColor,null);
+          window.addCaret(0,0,null,param.editorID,param.editorColor);
 
         stream.send(JSON.stringify(pingData));
      }
@@ -368,7 +380,7 @@ window.onload = function(){
  window.viewFn['ping'] = function(param){
      if(param.editorID != window.editorID && typeof $("#" + param.editorID).get(0) == "undefined")
      {
-       window.addCaret(0,0,null,param.editorID,param.editorColor,null);
+       window.addCaret(0,0,null,param.editorID,param.editorColor);
      }
  }
 
@@ -386,11 +398,26 @@ var exec = function(resp){
     console.log("Server Say: " + resp.data);
     var data = JSON.parse(resp.data);
 
-    window.removeVirtualCaret(data.r,data.author,data.fn);
-    window.normalizeTextNode(data.r);
-    
-    window.viewFn[data.fn](data);
-    window.restoreCarets(data);
+    switch(data.fn){
+
+
+      case "execUpdatePosition":{
+        if (data.author != window.editorID){
+           var authorCaret = $("#" + data.author);
+           $(authorCaret).remove();
+           window.addCaret(data.r,data.c,authorCaret.get(0),data.author);
+        }
+        var currRow = $($('tr:eq('+(parseInt(window.row))+')').get(0));
+        $(currRow).focusEditable(parseInt(window.col));
+        break;
+      }
+      default:{
+        window.removeVirtualCaret(data.r,data.author,data.fn);
+        window.normalizeTextNode(data.r);
+        window.viewFn[data.fn](data);
+        window.restoreCarets(data);
+      }
+    }
 
 }
 
@@ -428,9 +455,7 @@ $.fn.focusEditable = function(col)
     s.addRange(r);
 
   } else {
-
-     currRow.get(0).focus();
-
+    currRow.get(0).focus();
   }
 }
 
@@ -439,36 +464,49 @@ $.fn.fn = function(e,notifyChange){
   var anchorNode = window.getSelection().anchorNode;
   var parentNode = anchorNode.parentNode;
   var parentNodeContents = $(parentNode).contents();
-  //var leftCaret = countLeftCaret
+
   var anchorOffset = window.getSelection().anchorOffset;
 
   var col = 0;
   if(parentNodeContents.length > 1)
   {
-    for(var i=0;i<parentNodeContents.length && parentNodeContents[i] !== anchorNode;i++)
+    for(var i=0;i<parentNodeContents.length;i++)
     { 
-        if(parentNodeContents[i].nodeType == 3)
+        if(parentNodeContents[i] !== anchorNode && parentNodeContents[i].nodeType == 3)
           col += parentNodeContents[i].nodeValue.length;
     }
   }
   
   col += window.getSelection().anchorOffset;
-  var currRow = $(window.getSelection().anchorNode).parent().parent();
-  var row = currRow.index();
+  var currRow =$(window.getSelection().anchorNode).closest("tr");
+  var row =  $(currRow).index();
 
   console.log("r:"+row+"c:"+col);
-  var text = currRow.contents();
+  var text = window.getText(row);
 
 
   window.row = parseInt(row);
   window.col = parseInt(col);
+
+  if(e.type == "mouseup" && $.contains(window.documentized.get(0),e.target))
+  {
+       var streamPos = {
+         'fn':'execUpdatePosition',
+         'r':row,
+         'c':col,
+         'author':window.editorID,
+         'action':'updatePosition'
+       };
+
+       notifyChange(JSON.stringify(streamPos));
+  }
 
   if(e.type == "keyup" || e.type == "keydown")
   {
      if(e.type == "keyup")
        switch(e.keyCode){
 
-         case 8:  {console.log("sono in keyup handleer" + e.which); console.log("cancellabile: " + e.cancelable); e.stopImmediatePropagation(); e.preventDefault(); return false;} //backspace
+         case 8:  {e.stopImmediatePropagation(); e.preventDefault(); return false;} //backspace
          case 13: {e.preventDefault(); break;} // enter
          case 46: {e.preventDefault(); break;} // canc
          case 38: { if($(currRow).is(":first-child")) return; currRow.prev().focusEditable(col); break;} //arrow up
@@ -483,16 +521,15 @@ $.fn.fn = function(e,notifyChange){
           { //enter
             e.preventDefault();
 
-            if(currRow.text() == "" || currRow.text().length == col)
+            if(text == "" || text.length == col)
             {
                 var paramEnter1 = {
                    fn: "execEnter1",
                    r: row,
                    c: col,
-                   elem: "<tr><td contenteditable=\"true\"></td></tr>",
                    author:window.editorID,
                 };
-                notifyChange($.fn.indices(currRow,'addRow',paramEnter1));
+                notifyChange($.fn.indices(currRow,'addRowNoMoveText',paramEnter1));
             }
             else{
 
@@ -500,18 +537,17 @@ $.fn.fn = function(e,notifyChange){
                    fn: "execEnter2",
                    r:row,
                    c: col,
+                   c_end: parseInt(text.length),
                    author:window.editorID,
-                   elem:"<tr><td contenteditable=\"true\"></td></tr>"
                 };
 
-                notifyChange($.fn.indices(currRow,'addRow',paramEnter2));
+                notifyChange($.fn.indices(currRow,'addRowMoveText',paramEnter2));
 
             }
-            return;
+            return false;
           }
           case 8:
           {
-            console.log("sono in keydown handleer" + e.which);
 
             //var currRow = $(window.getSelection().anchorNode).parent().parent();
             if(col > 0)
@@ -550,7 +586,7 @@ $.fn.fn = function(e,notifyChange){
             e.preventDefault();
 
             var currTr = $(window.getSelection().anchorNode).parent().parent();
-            var currText = currRow.children("td").text();
+            var currText = window.getText($(currTr).index());
 
             if(currText.length > col){
 
@@ -562,10 +598,10 @@ $.fn.fn = function(e,notifyChange){
                     author:window.editorID
 
                };
-               notifyChange($.fn.indices(currRow,'removeChar',paramCancChar,true,false));
+               notifyChange($.fn.indices(currTr,'removeChar',paramCancChar,true,false));
 
             }else{
-                if(currTr.is(":last-child")) return;
+                if(currTr.is(":last-child")) return false;
 
                 var paramCanc = {
 
@@ -575,15 +611,15 @@ $.fn.fn = function(e,notifyChange){
                   author:window.editorID,
                 };
 
-                notifyChange($.fn.indices(currRow,'removeRow',paramCanc,false,true));
+                notifyChange($.fn.indices(currTr,'removeRow',paramCanc,false,true));
             }
 
-            return;
+            return false;
           }
           case 38:
-          case 40: {e.preventDefault(); return; }
+          case 40: {e.preventDefault(); return false; }
           default:
-            return
+            return true;
        }
   }
 
@@ -591,7 +627,6 @@ $.fn.fn = function(e,notifyChange){
 
 $.fn.streamChar = function(e,notifyChange)
 {
-  console.log("sono in keypress handleer" + e.which);
 
   if(e.type=="keypress" && e.which !== 0 && !e.ctrlKey && !e.metaKey && !e.altKey)
   {
@@ -635,7 +670,8 @@ $.fn.indices = function(currTr,action,func,prev,next) {
 
 $.fn.documentize = function(callBackChange){
 
-  var doc = $(this); 
+  var doc = $(this);
+  window.documentized = doc;
   $(this).find("td").on('keydown keyup mouseup',function (e){$.fn.fn(e,callBackChange);});
   $(this).find("td").on('keypress',function (e){$.fn.streamChar(e,callBackChange);});
 
