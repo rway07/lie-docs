@@ -116,6 +116,9 @@ window.onload = function(){
  {
    var currRow = $('tr:eq('+(parseInt(row))+')').get(0);
    var domTD = $(currRow).children("td").get(0);
+   if(typeof domTD == "undefined")
+     console.log("ti ho beccato");
+     
    var text = document.createTextNode("");
    domTD.appendChild(text);
 
@@ -200,7 +203,10 @@ window.onload = function(){
       window.normalizeTextNode(row);
 
  }
-
+ window.subOrZero = function(a,b)
+ {
+   return (a-b >= 0)?(a-b):0;
+ }
  window.findVirtualCaret = function(id){
    for(var i=0; i<window.restoreCaret.length; i++)
      if($(window.restoreCaret[i].obj).attr("id") == id) return i;
@@ -228,13 +234,13 @@ window.onload = function(){
 
     //update real caret
     if((window.row == param.r && window.col >= param.c) || window.row > param.r){
-      window.col = window.col - parseInt(param.c)
+      window.col = window.subOrZero(window.col,parseInt(param.c));
       window.row++;
     }
     //update virtual carets
     for(var i=0; i<restoreCaret.length;i++){
       if((restoreCaret[i].row == param.r && restoreCaret[i].index >= param.c) || restoreCaret[i].row > param.r){
-        restoreCaret[i].index = restoreCaret[i].index - parseInt(param.c);
+        restoreCaret[i].index = window.subOrZero(restoreCaret[i].index,parseInt(param.c));
         restoreCaret[i].row++;
       }
     }
@@ -256,13 +262,13 @@ window.onload = function(){
 
       //update real caret
       if((window.row == param.r && window.col >= param.c) || window.row > param.r){
-        window.col =(parseInt(window.row) == parseInt(param.r))?(parseInt(window.col) - parseInt(param.c)):window.col;
+        window.col =(parseInt(window.row) == parseInt(param.r))?window.subOrZero(window.col,parseInt(window.col)):window.col;
         window.row++;
       }
       //update virtual carets
       for(var i=0; i<restoreCaret.length;i++){
         if((restoreCaret[i].row == param.r && restoreCaret[i].index >= param.c) || restoreCaret[i].row > param.r){
-          restoreCaret[i].index = (parseInt(restoreCaret[i].row) == parseInt(param.r))?(parseInt(restoreCaret[i].index) - parseInt(param.c)):restoreCaret[i].index;
+          restoreCaret[i].index = (parseInt(restoreCaret[i].row) == parseInt(param.r))?window.subOrZero(restoreCaret[i].index,parseInt(param.c)):restoreCaret[i].index;
           restoreCaret[i].row++;
         }
       }
@@ -279,13 +285,13 @@ window.onload = function(){
       //update real caret
       if((window.row == param.r && window.col >= param.c) || window.row > param.r){
           window.col =(parseInt(window.row) == parseInt(param.r))?(text_before.length + parseInt(param.c)):window.col;
-          window.row--;
+          window.row=window.subOrZero(window.row,1);
       }
       //update virtual carets
       for(var i=0; i<restoreCaret.length;i++){
           if((restoreCaret[i].row == param.r && restoreCaret[i].index >= param.c) || restoreCaret[i].row > param.r){
             restoreCaret[i].index = (parseInt(restoreCaret[i].row) == parseInt(param.r))?(text_before.length + parseInt(param.c)):restoreCaret[i].index;
-            restoreCaret[i].row--;
+            restoreCaret[i].row=window.subOrZero(restoreCaret[i].row,1);
           }
       }
 
@@ -308,7 +314,7 @@ window.onload = function(){
                 virtualCarets[i].index += offset ;
            }
       }
-      window.col = (window.col >= param.c && window.row == param.r)?window.col-1:window.col;
+      window.col = (window.col >= param.c && window.row == param.r)?window.subOrZero(window.col,1):window.col;
  }
 
  window.viewFn['execCanc'] = function(param){
@@ -321,14 +327,14 @@ window.onload = function(){
       //update real caret
       if((window.row == param.r && window.col >= param.c) || window.row > param.r){
             window.col =(parseInt(window.row) == parseInt(param.r))?window.col:currText.length;
-            window.row = (parseInt(window.row) == parseInt(param.r))?window.row:window.row-1;
+            window.row = (parseInt(window.row) == parseInt(param.r))?window.row:window.subOrZero(window.row,1);
       }
 
       //update virtual carets
       for(var i=0; i<restoreCaret.length;i++){
             if((restoreCaret[i].row == param.r && restoreCaret[i].index >= param.c) || restoreCaret[i].row > param.r){
               restoreCaret[i].index = (parseInt(restoreCaret[i].row) == parseInt(param.r))?restoreCaret[i].index:currText.length;
-              restoreCaret[i].row = (parseInt(restoreCaret[i].row) == parseInt(param.r))?restoreCaret[i].index:restoreCaret[i].index-1;
+              restoreCaret[i].row = (parseInt(restoreCaret[i].row) == parseInt(param.r))?restoreCaret[i].index:window.subOrZero(restoreCaret[i].index,1);
             }
       }
 }
@@ -521,7 +527,7 @@ $.fn.fn = function(e,notifyChange){
 
              var streamPos = {
                  'fn':'execUpdatePosition',
-                 'r':row-1,
+                 'r':window.subOrZero(row,1),
                  'c':col,
                  'author':window.editorID,
                  'action':'updatePosition'
@@ -581,7 +587,7 @@ $.fn.fn = function(e,notifyChange){
               var streamPos = {
                       'fn':'execUpdatePosition',
                       'r':row,
-                      'c':col-1,
+                      'c':(col>1)?window.subOrZero(col,1):col,
                       'author':window.editorID,
                       'action':'updatePosition'
               };
