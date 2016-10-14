@@ -15,7 +15,7 @@ window.onload = function(){
                        ws.close();
                      },
 
-      registerCallback: function(func){ws.onmessage = func},
+      registerCallback: function(func){ws.onmessage = func}
  };
 
   ws.onopen = function(){
@@ -34,7 +34,7 @@ window.onload = function(){
  window.col=0;
  window.editorID = String.prototype.makeid(128);
  window.restoreCaret =[];
- window.caret = "<div class=\"caret\" z-index=\"100\"></div>";
+ window.caret = "<div class=\"caret\"></div>";
  window.elementRow = "<tr><td contenteditable=\"true\"></td></tr>";
  window.viewFn = [];
 
@@ -75,7 +75,7 @@ window.onload = function(){
 
    return text;
 
- }
+ };
  window.removeVirtualCaret = function(actionAuthor,action){
 
      if(action != "join" && action != "ping" && action != "leave")
@@ -104,7 +104,7 @@ window.onload = function(){
          $(currRow).children("td").text(text);
        });
      }
- }
+ };
 
  window.restoreCarets = function(data){
   var virtualCarets = window.restoreCaret;
@@ -120,8 +120,8 @@ window.onload = function(){
 
   }
 
- }
- window.min = function(a,b){return (a<=b)?a:b;}
+ };
+ window.min = function(a,b){return (a<=b)?a:b;};
 
  window.appendEmptyTextNode = function(row)
  {
@@ -134,7 +134,7 @@ window.onload = function(){
    domTD.appendChild(text);
 
    return text;
- } 
+ };
 
  window.selectTextNodeOnCol=function(row,col){
    var currRow = $('tr:eq('+(parseInt(row))+')').get(0);
@@ -178,7 +178,7 @@ window.onload = function(){
 
    return currTextNode;
 
- }
+ };
 
  window.normalizeTextNode = function(row){
     var currRow = $('tr:eq('+(parseInt(row))+')').get(0);
@@ -186,10 +186,10 @@ window.onload = function(){
                .contents()
                .filter(function(){return this.nodeType == 3 && this.nodeValue == "";})
                .each(function(idx,obj){$(obj).remove();});
- }
+ };
  window.addCaret = function(row,col,caret,id,color){
       var currTextNode = null;
-      var currRow = $('tr:eq('+(parseInt(row))+')').get(0);
+      //var currRow = $('tr:eq('+(parseInt(row))+')').get(0);
       var range = document.createRange();
 
       if( caret == null)
@@ -213,15 +213,15 @@ window.onload = function(){
 
       window.normalizeTextNode(row);
 
- }
+ };
  window.subOrZero = function(a,b)
  {
    return (a-b >= 0)?(a-b):0;
- }
+ };
  window.findVirtualCaret = function(id){
    for(var i=0; i<window.restoreCaret.length; i++)
      if($(window.restoreCaret[i].obj).attr("id") == id) return i;
- }
+ };
 
  window.findRightVirtualCaret = function(row,col){
     var retCarets = [];
@@ -229,7 +229,7 @@ window.onload = function(){
       if(window.restoreCaret[i].row == row && window.restoreCaret[i].index > col) retCarets.push(i);
 
     return retCarets;
-  }
+  };
 
  window.viewFn['execEnter1'] = function(param){
 
@@ -237,7 +237,7 @@ window.onload = function(){
     var elem = $.parseHTML(window.elementRow);
    
     $(elem).insertAfter(currElem)
-        .on('keydown keyup mouseup keypress',function (e){$.fn.fn(e,stream.send);})
+        .on('keydown keyup mouseup',function (e){$.fn.fn(e,stream.send);})
         .on('keypress',function (e){$.fn.streamChar(e,stream.send);})
         .attr("_subindex",param._subindex)
         .attr("_index",param._index);
@@ -268,6 +268,7 @@ window.onload = function(){
       $(elem).children("td").text(text.substr(parseInt(param.c)));
       $(elem).insertAfter(currRow)
              .on('keydown keyup mouseup',function (e){$.fn.fn(e,stream.send);})
+             .on('keypress',function (e){$.fn.streamChar(e,stream.send);})
              .attr("_subindex",param._subindex)
              .attr("_index",param._index);
 
@@ -306,7 +307,7 @@ window.onload = function(){
           }
       }
 
- }
+ };
 
  window.viewFn["execBackspaceChar"] = function(param){
       var currRow = $($('tr:eq('+(parseInt(param.r))+')').get(0));
@@ -326,7 +327,7 @@ window.onload = function(){
            }
       }
       window.col = (window.col >= param.c && window.row == param.r)?window.subOrZero(window.col,1):window.col;
- }
+ };
 
  window.viewFn['execCanc'] = function(param){
 
@@ -348,13 +349,13 @@ window.onload = function(){
               restoreCaret[i].row = (parseInt(restoreCaret[i].row) == parseInt(param.r))?restoreCaret[i].index:window.subOrZero(restoreCaret[i].index,1);
             }
       }
-}
+};
 
  window.viewFn['execCancChar']=function(param){
       var currRow = $($('tr:eq('+(parseInt(param.r))+')').get(0));
       $(currRow).focusEditable(parseInt(param.c+1));
       document.execCommand('delete', false, null);
- }
+ };
 
  window.viewFn['execAddChar']=function(param){
      var currRow = $('tr:eq('+parseInt(param.r)+')');
@@ -376,7 +377,7 @@ window.onload = function(){
          }
      }
      window.col = (window.col >= param.c && window.row == param.r)?window.col+1:window.col;
- }
+ };
 
  window.viewFn['join'] = function(param){
 
@@ -390,12 +391,12 @@ window.onload = function(){
         stream.send(JSON.stringify(pingData));
      }
 
- }
+ };
 
  window.viewFn['leave'] = function(param){
 
       $("#"+param.editorID).remove();
- }
+ };
 
  window.viewFn['ping'] = function(param){
      if(param.editorID != window.editorID && typeof $("#" + param.editorID).get(0) == "undefined")
@@ -438,7 +439,7 @@ var exec = function(resp){
         window.restoreCarets(data);
       }
     }
-}
+};
 
 
 String.prototype.makeid = function(len)
@@ -450,12 +451,12 @@ String.prototype.makeid = function(len)
         text += possible.charAt(Math.floor(Math.random() * possible.length));
 
     return text;
-}
+};
 
 
 $.fn.focusEditable = function(col)
 {
-  var c = (typeof col === 'undefined')?0:col;
+  //var c = (typeof col === 'undefined')?0:col;
   var currRow = $(this).children("td");
 
   var selectedNode = selectTextNodeOnCol($(this).index(),col);
@@ -476,7 +477,7 @@ $.fn.focusEditable = function(col)
   } else {
     currRow.get(0).focus();
   }
-}
+};
 
 $.fn.fn = function(e,notifyChange){
   var anchorNode = window.getSelection().anchorNode; //text
@@ -621,7 +622,7 @@ $.fn.fn = function(e,notifyChange){
                    fn: "execEnter1",
                    r: row,
                    c: col,
-                   author:window.editorID,
+                   author:window.editorID
                 };
                 notifyChange($.fn.indices(currRow,'addRowNoMoveText',paramEnter1));
             }
@@ -632,7 +633,7 @@ $.fn.fn = function(e,notifyChange){
                    r:row,
                    c: col,
                    c_end: parseInt(text.length),
-                   author:window.editorID,
+                   author:window.editorID
                 };
 
                 notifyChange($.fn.indices(currRow,'addRowMoveText',paramEnter2));
@@ -702,7 +703,7 @@ $.fn.fn = function(e,notifyChange){
                   fn: "execCanc",
                   r: row,
                   c: col,
-                  author:window.editorID,
+                  author:window.editorID
                 };
 
                 notifyChange($.fn.indices(currTr,'removeRow',paramCanc,false,true));
@@ -739,10 +740,9 @@ $.fn.streamChar = function(e,notifyChange)
 
     notifyChange($.fn.indices(currRow,'addChar',paramAddChar,true));
 
-    return;
   }
 
-}
+};
 
 $.fn.indices = function(currTr,action,func,prev,next) {
 
@@ -760,7 +760,7 @@ $.fn.indices = function(currTr,action,func,prev,next) {
 
    return JSON.stringify(func);
 
- }
+ };
 
 $.fn.documentize = function(callBackChange){
 
@@ -772,8 +772,8 @@ $.fn.documentize = function(callBackChange){
   $(document).click(function(e){
 
       var distance = function(x1,x2,y1,y2){
-          return Math.sqrt(Math.pow(x2-x1,2) + Math.pow(y2-y1,2))
-      }
+          return Math.sqrt(Math.pow(x2-x1,2) + Math.pow(y2-y1,2));
+      };
 
       var selectedNode = null;
       var selectedDistance = null;
@@ -794,4 +794,4 @@ $.fn.documentize = function(callBackChange){
 
       }
     });
-}
+};
