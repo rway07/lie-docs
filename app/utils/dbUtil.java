@@ -20,11 +20,6 @@ import static akka.dispatch.Futures.future;
 public class dbUtil {
 
     private static DB db;
-    ActorSystem system;
-
-    public dbUtil(ActorSystem system){
-        this.system = system;
-    }
 
     public static int executeUpdate(String query) {
         Connection c = db.getConnection();
@@ -78,28 +73,6 @@ public class dbUtil {
         }
 
         return list;
-    }
-
-    public Future<ResultSet> q(String sql){
-
-        Future<ResultSet> f = future(new Callable<ResultSet>() {
-            public ResultSet call() {
-
-                Connection conn =  db.getConnection();
-                try{
-                    Statement stm = conn.createStatement();
-                    ResultSet r = stm.executeQuery(sql);
-                    return r;
-                }catch (Exception e){
-                    Logger.error(e.getMessage() + ":" + e.getCause());
-                }
-
-                return null;
-
-            }
-        }, system.dispatcher());
-
-        return f;
     }
 
 }
