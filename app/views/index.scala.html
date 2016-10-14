@@ -1,23 +1,56 @@
-@(title: String,customHead:String,projectName:String,fileName:String)
+@import java.util
 
-@header(title,customHead)
+@(title: String, customHead: String, projectList: ArrayList[HashMap[String, Object]])
 
-        <div id="project" _projectName="@projectName" style="display:none;" ></div>
-        <div id="file" _fileName="@fileName" style="display:none;"></div>
+@header(title, customHead)
+@navbar()
+    <div class="col-sm-12">
+        <div id="errordiv">
 
-        @navbar(fileName)
-
-        <div class="container" id="editorColor">&nbsp;</div>
-        <div class="container">
-            <pre style="background-color:rgba(255,255,255,0); border:0;">
-              <table id="page">
-                <tr _index="0" _subindex="0"><td contenteditable="true">1</td></tr>
-              </table>
-            </pre>
         </div>
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                <h4>Project List</h4>
+            </div>
+            <div class="panel-body">
+            @if(!projectList.isEmpty()) {
+                <div class="row col-xs-offset-0">
+                @for(p <- projectList) {
+                    <div id='panel-@p("project").asInstanceOf[HashMap[String, Object]]("id")'  class="col-xs-3">
+                        <div class="panel panel-default">
+                            <div class="panel-heading">
+                                <i id="@p("project").asInstanceOf[HashMap[String, Object]]("id")"
+                                    class="remove_me fa fa-trash-o fa-2x pull-right" aria-hidden="true"></i>
+                                <i id="@p("project").asInstanceOf[HashMap[String, Object]]("id")"
+                                    class="edit_me fa fa-edit fa-2x pull-right" aria-hidden="true"></i>
+                                <h3>
+                                    @p("project").asInstanceOf[HashMap[String, Object]]("name")
+                                </h3>
+                            </div>
+                            <div class="panel-body">
+                                <ul>
+                                @defining(p("files").asInstanceOf[ArrayList[HashMap[String, Object]]]) { filesList =>
+                                    @if(!filesList.isEmpty()) {
+                                        @for(f <- filesList) {
+                                            <h4><li>@f("name")</li></h4>
+                                        }
+                                    } else {
+                                        <h4>No files (yet)</h4>
+                                    }
+                                }
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="col-xs-offset-0">
 
-
-
-    </body>
-
+                        </div>
+                    </div>
+                }
+                </div>
+            } else {
+                Curse or blessing, it is the price we pay to keep the Hylden banished from the land
+            }
+            </div>
+        </div>
+    </div>
 @footer()
