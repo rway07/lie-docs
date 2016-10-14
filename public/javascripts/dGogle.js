@@ -234,7 +234,7 @@ window.onload = function(){
     //update virtual carets
     for(var i=0; i<restoreCaret.length;i++){
       if((restoreCaret[i].row == param.r && restoreCaret[i].index >= param.c) || restoreCaret[i].row > param.r){
-        restoreCaret[i].index = restoreCaret[i].index - parseInt(parse.c);
+        restoreCaret[i].index = restoreCaret[i].index - parseInt(param.c);
         restoreCaret[i].row++;
       }
     }
@@ -321,14 +321,14 @@ window.onload = function(){
       //update real caret
       if((window.row == param.r && window.col >= param.c) || window.row > param.r){
             window.col =(parseInt(window.row) == parseInt(param.r))?window.col:currText.length;
-            window.row--;
+            window.row = (parseInt(window.row) == parseInt(param.r))?window.row:window.row-1;
       }
 
       //update virtual carets
       for(var i=0; i<restoreCaret.length;i++){
             if((restoreCaret[i].row == param.r && restoreCaret[i].index >= param.c) || restoreCaret[i].row > param.r){
               restoreCaret[i].index = (parseInt(restoreCaret[i].row) == parseInt(param.r))?restoreCaret[i].index:currText.length;
-              restoreCaret[i].row--;
+              restoreCaret[i].row = (parseInt(restoreCaret[i].row) == parseInt(param.r))?restoreCaret[i].index:restoreCaret[i].index-1;
             }
       }
 }
@@ -463,9 +463,10 @@ $.fn.focusEditable = function(col)
 
 $.fn.fn = function(e,notifyChange){
   
-  var anchorNode = window.getSelection().anchorNode;
-  var parentNode = anchorNode.parentNode;
-  var parentNodeContents = $(parentNode).contents();
+  var anchorNode = window.getSelection().anchorNode; //text
+  var parentTD = $(anchorNode).closest("td");      //td
+  var parentTR = $(parentTD).closest("tr");        //tr
+  var parentNodeContents = $(parentTD).contents();
 
   var anchorOffset = window.getSelection().anchorOffset;
 
@@ -484,7 +485,7 @@ $.fn.fn = function(e,notifyChange){
   }
   
   col += window.getSelection().anchorOffset;
-  var currRow =$(window.getSelection().anchorNode).closest("tr");
+  var currRow =parentTR;
   var row =  $(currRow).index();
 
   console.log("r:"+row+"c:"+col);
@@ -629,8 +630,8 @@ $.fn.fn = function(e,notifyChange){
           {
             e.preventDefault();
 
-            var currTr = $(window.getSelection().anchorNode).parent().parent();
-            var currText = window.getText($(currTr).index());
+            var currTr = parentTR; //$(window.getSelection().anchorNode).closest("tr");
+            var currText = text;
 
             if(currText.length > col){
 
