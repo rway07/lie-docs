@@ -39,6 +39,17 @@ window.onload = function(){
  window.viewFn = [];
 
  window.randomColor = function () {
+     /*Colors
+      #fc0202
+      #6efc02
+      #02e7fc
+      #0213fc
+      #8702fc
+      #fc02ef
+      #c2fc02
+      #fc8b02
+      #663300
+      */
    var letters = '0123456789ABCDEF';
    var color = '#';
    for (var i = 0; i < 6; i++ ) {
