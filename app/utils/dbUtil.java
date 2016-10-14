@@ -1,16 +1,17 @@
 package utils;
 
-import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import play.Logger;
 import play.db.*;
 import scala.concurrent.Future;
-
+import java.util.ArrayList;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.Statement;
+import java.sql.SQLException;
+import java.sql.*;
 import java.util.concurrent.Callable;
-
+import java.util.*;
 import static akka.dispatch.Futures.future;
 
 /**
@@ -18,11 +19,65 @@ import static akka.dispatch.Futures.future;
  */
 public class dbUtil {
 
-    private DB db;
+    private static DB db;
     ActorSystem system;
 
     public dbUtil(ActorSystem system){
         this.system = system;
+    }
+
+    public static int executeUpdate(String query) {
+        Connection c = db.getConnection();
+        int r = 0;
+        try {
+            Statement s = c.createStatement();
+            r = s.executeUpdate(query);
+            Logger.info("Query: rows affected: " + r);
+        } catch (Exception e) {
+            Logger.error("ERROR: " + e.getMessage() + " - " + e.getCause());
+            return 0;
+        } finally {
+            try {
+                c.close();
+            } catch (SQLException e) {
+                Logger.error("ERROR: " + e.getMessage() + " - " + e.getCause());
+            }
+        }
+
+        return r;
+    }
+
+    public static ArrayList executeQuery(String query) {
+        Connection c = db.getConnection();
+        ResultSet rs;
+        ArrayList<HashMap<String, Object>> list = new ArrayList<HashMap<String, Object>>();
+
+        try {
+            Statement s = c.createStatement();
+            rs = s.executeQuery(query);
+
+            ResultSetMetaData md = rs.getMetaData();
+            int columns = md.getColumnCount();
+            while (rs.next()){
+                HashMap<String, Object> row = new HashMap<String, Object>(columns);
+                for(int i=1; i<=columns; ++i){
+                    row.put(md.getColumnLabel(i), rs.getObject(i));
+                }
+                list.add(row);
+            }
+            Logger.error("CRISTO: " + list.toString());
+        } catch (Exception e) {
+            Logger.error("ERRORE: " + e.getMessage() + " - " + e.getCause());
+            return null;
+        } finally {
+            try {
+                c.close();
+            } catch (SQLException e) {
+                Logger.error("ERRORE: " + e.getMessage() + " - " + e.getCause());
+            }
+        }
+
+        return list;
     }
 
     public Future<ResultSet> q(String sql){
