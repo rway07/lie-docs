@@ -34,7 +34,7 @@ window.onload = function(){
  window.col=0;
  window.editorID = String.prototype.makeid(128);
  window.restoreCaret =[];
- window.caret = "<div class=\"caret\" z-index=\"100\">|</div>";
+ window.caret = "<div class=\"caret\" z-index=\"100\"></div>";
  window.elementRow = "<tr><td contenteditable=\"true\"></td></tr>";
  window.viewFn = [];
 
@@ -183,7 +183,7 @@ window.onload = function(){
 
         caret = $.parseHTML(window.caret);
         $(caret).attr("id",id);
-        $(caret).css("color",color);
+        $(caret).css("border-left-color",color);
         caret = $(caret).get(0);
       }
 
@@ -462,33 +462,33 @@ $.fn.focusEditable = function(col)
 }
 
 $.fn.fn = function(e,notifyChange){
-  
   var anchorNode = window.getSelection().anchorNode; //text
   var parentTD = $(anchorNode).closest("td");      //td
   var parentTR = $(parentTD).closest("tr");        //tr
   var parentNodeContents = $(parentTD).contents();
-
   var anchorOffset = window.getSelection().anchorOffset;
-
+  
   var col = 0;
-  if(parentNodeContents.length > 1)
-  {
-    for(var i=0;i<parentNodeContents.length;i++)
-    { 
-        if(parentNodeContents[i] !== anchorNode && parentNodeContents[i].nodeType == 3)
+
+  if(parentNodeContents.length > 1){
+    for(var i=0;i<parentNodeContents.length;i++){
+        if(parentNodeContents[i] !== anchorNode){
+         if(parentNodeContents[i].nodeType == 3)
           col += parentNodeContents[i].nodeValue.length;
-        else 
+        }  
+        else
           if(parentNodeContents[i] === anchorNode)
             break;
-            
+
     }
   }
-  
-  col += window.getSelection().anchorOffset;
+
+  col += anchorOffset;
+
   var currRow =parentTR;
   var row =  $(currRow).index();
 
-  console.log("r:"+row+"c:"+col);
+  //console.log("r:"+row+"c:"+col);
   var text = window.getText(row);
 
   window.row = parseInt(row);
@@ -515,13 +515,46 @@ $.fn.fn = function(e,notifyChange){
          case 8:  {e.stopImmediatePropagation(); e.preventDefault(); return false;} //backspace
          case 13: {e.preventDefault(); break;} // enter
          case 46: {e.preventDefault(); break;} // canc
-         case 38: { if($(currRow).is(":first-child")) return; currRow.prev().focusEditable(col); break;} //arrow up
-         case 40: { if($(currRow).is(":last-child")) return; currRow.next().focusEditable(col); break;} //arrow down
+         case 38: {  //arrow up
+             if($(currRow).is(":first-child"))
+               return false;
+
+             var streamPos = {
+                 'fn':'execUpdatePosition',
+                 'r':row-1,
+                 'c':col,
+                 'author':window.editorID,
+                 'action':'updatePosition'
+             };
+
+             window.row = streamPos.r;
+             notifyChange(JSON.stringify(streamPos));
+
+             //currRow.prev().focusEditable(col);
+             return false;
+         }
+         case 40: { //arrow down
+           if($(currRow).is(":last-child"))
+             return false;
+
+           var streamPos = {
+                'fn':'execUpdatePosition',
+                'r':row+1,
+                'c':col,
+                'author':window.editorID,
+                'action':'updatePosition'
+           };
+
+           window.row=streamPos.r;
+           notifyChange(JSON.stringify(streamPos));
+           //currRow.next().focusEditable(col);
+           return false;
+         }
          default: return;
 
        }
 
-     console.log(e.keyCode);
+     //console.log(e.keyCode);
      if(e.type == "keydown")
        switch(e.keyCode){
           case 39: //right arrow
@@ -540,8 +573,8 @@ $.fn.fn = function(e,notifyChange){
               window.col = streamPos.c;
             }
 
-            e.preventDefault();
-            return false;
+
+            break;
           }
           case 37: //left arrow
           {
@@ -552,15 +585,14 @@ $.fn.fn = function(e,notifyChange){
                       'author':window.editorID,
                       'action':'updatePosition'
               };
-
               if(col > 0)
               {
                 notifyChange(JSON.stringify(streamPos));
                 window.col = streamPos.c;
               }
 
-              e.preventDefault();
-              return false;
+
+              break;
           }
           case 13:
           { //enter
