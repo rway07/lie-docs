@@ -1,0 +1,23 @@
+@(title: String,customHead:String,projectName:String,fileName:String)
+
+@header(title,customHead)
+
+<div id="project" _projectName="@projectName" style="display:none;" ></div>
+<div id="file" _fileName="@fileName" style="display:none;"></div>
+
+@editor_navbar(projectName)
+
+<div class="container" id="editorColor">&nbsp;</div>
+<div class="container">
+            <pre style="background-color:rgba(255,255,255,0); border:0;">
+              <table id="page">
+                <tr _index="0" _subindex="0"><td contenteditable="true">1</td></tr>
+              </table>
+            </pre>
+</div>
+
+
+
+</body>
+
+@footer()
