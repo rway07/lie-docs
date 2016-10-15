@@ -1,9 +1,9 @@
-@import java.util
-
 @(title: String, customHead: String, projectList: ArrayList[HashMap[String, Object]])
 
-@header(title, customHead)
-@navbar()
+@header.common(title, customHead)
+@header.index()
+@navbar.index()
+@modals.new_project()
     <div class="col-sm-12">
         <div id="errordiv">
 

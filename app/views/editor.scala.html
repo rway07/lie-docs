@@ -1,66 +1,43 @@
 @(title: String, customHead:String, projectID:String, projectName:String, filesList:ArrayList[HashMap[String, Object]])
 
-@header(title,customHead)
-        <input id="projectID" type="hidden" value="@projectID">
-        <div id="project" _projectName="@projectName" style="display:none;" ></div>
-        <!--<div id="file" _fileName="" style="display:none;"></div>-->
-        <script src="@routes.Assets.versioned("javascripts/dGogle.js")" type="text/javascript"></script>
-        <link rel="stylesheet" media="screen" href="@routes.Assets.versioned("stylesheets/dashboard.css")">
-        <script src="@routes.Assets.versioned("javascripts/editor.js")" type="text/javascript"></script>
+@header.common(title,customHead)
+@header.editor()
+    <input id="projectID" type="hidden" value="@projectID">
+    <div id="project" _projectName="@projectName" style="display:none;" ></div>
+    <!--<div id="file" _fileName="" style="display:none;"></div>-->
 
-    @editor_navbar(projectName)
-
-        <body>
-            <div class="container-fluid"><!-- Project view -->
-                <div class="row">
-                    <div class="col-sm-3 col-md-2 sidebar">
-                        <div class="row">
-                            <h4>Project's Files</h4>
-                            <button data-toggle="modal" data-target="#newFileModal" class="btn btn-info">
-                                <i class="fa fa-plus"></i> Add File
-                            </button>
-                        </div>
-                        <br>
-                        <ul id="filesList" class="list">
-                            @for(f <- filesList) {
-                                <div id="container-@f("id")">
-                                    <li><strong> @f("name")</strong></li><i id="@f("id")" class="remove_file fa fa-trash"></i>
-                                </div>
-                            }
-                        </ul>
+    <!-- TODO il modal per l'aggiunta del file non acquisisce il focus alla textbox correttamente -->
+@modals.new_file()
+@navbar.editor(projectName)
+    <body>
+        <div class="container-fluid"><!-- Project view -->
+            <div class="row">
+                <div class="col-sm-3 col-md-2 sidebar">
+                    <div class="row">
+                        <h4>Project's Files</h4>
+                        <button data-toggle="modal" data-target="#newFileModal" class="btn btn-info">
+                            <i class="fa fa-plus"></i> Add File
+                        </button>
                     </div>
-                    <div class="main container col-sm-9 col-sm-offset-2"><!-- Document view -->
-                        <pre style="background-color:rgba(255,255,255,0); border:0;">
-                            <table id="page">
-                                <tr _index="0" _subindex="0">
-                                    <td contenteditable="true">Put content here</td>
-                                </tr>
-                            </table>
-                        </pre>
-                    </div>
-                </div>
-            </div>
-        </body>
-        <div class="modal fade" id="newFileModal" tabindex="-1" role="dialog" aria-labelledby="newFileModalLabel">
-            <div class="modal-dialog" role="document">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-                        <h4 class="modal-title" id="myModalLabel">New File</h4>
-                    </div>
-                    <div class="modal-body">
-                        <div class="form-group row">
-                            <label class="col-sm-3 control-label">File Name</label>
-                            <div class="col-sm-4">
-                                <input id="fileName" name="fileName" type="text" class="form-control">
+                    <br>
+                    <ul id="filesList" class="list">
+                        @for(f <- filesList) {
+                            <div id="container-@f("id")">
+                                <li><strong> @f("name")</strong></li><i id="@f("id")" class="remove_file fa fa-trash"></i>
                             </div>
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-                        <button id="newFileButton" name="newFileButton" type="button" class="btn btn-primary">Add File</button>
-                    </div>
+                        }
+                    </ul>
+                </div>
+                <div class="main container col-sm-9 col-sm-offset-2"><!-- Document view -->
+                    <pre style="background-color:rgba(255,255,255,0); border:0;">
+                        <table id="page">
+                            <tr _index="0" _subindex="0">
+                                <td contenteditable="true">Put content here</td>
+                            </tr>
+                        </table>
+                    </pre>
                 </div>
             </div>
         </div>
+    </body>
 @footer()
