@@ -7,8 +7,10 @@ GET     /                                   controllers.HomeController.index
 POST    /project/:name/new                  controllers.HomeController.newProject(name:String)
 DELETE  /project/:project_id/delete         controllers.HomeController.removeProject(project_id:String)
 GET     /project/:project_id/edit           controllers.HomeController.editor(project_id:String)
+
 POST    /project/:id/file/:name             controllers.EditorController.newFile(id:String, name:String)
 POST    /file/:id/delete                    controllers.EditorController.removeFile(id:String)
+
 
 GET     /:project/:file                     controllers.TestController.index(project:String,file:String)
 GET     /ws                                 controllers.WebsocketController.ws

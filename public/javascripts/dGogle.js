@@ -24,7 +24,9 @@ window.onload = function(){
                "editorColor":window.editorColor,
                "project":$("#project").attr("_projectName"),
                "file":$("#file").attr("_fileName")})
- )};
+    );
+
+  };
 
  window.onbeforeunload = function (e) {
          stream.bye();
@@ -231,6 +233,25 @@ window.onload = function(){
     return retCarets;
   };
 
+ window.viewFn['open'] = function (param) {
+
+     $(window.documentized).find("tr").each(function(idx,obj){
+         $(obj).remove();
+
+     });
+
+     for(var i = 0; i < param.rows.length; i++){
+        var row = $.parseHTML(window.elementRow);
+        $(row).attr("_idx",param.rows[i].idx);
+        $(row).children("td").text(param.rows[i].str);
+        $(window.documentized).append(row);
+     }
+
+     $(window.documentized).find("td").on('keydown keyup mouseup',function (e){$.fn.fn(e,stream.send);});
+     $(window.documentized).find("td").on('keypress',function (e){$.fn.streamChar(e,stream.send);});
+
+
+ };
  window.viewFn['execEnter1'] = function(param){
 
     var currElem = $('tr:eq('+parseInt(param.r)+')');
@@ -379,16 +400,19 @@ window.onload = function(){
      window.col = (window.col >= param.c && window.row == param.r)?window.col+1:window.col;
  };
 
+ window.viewFn['init'] = function (param) {
+     console.log("ricevuto init ack, invio open");
+     stream.send(JSON.stringify({"action":"open"}));
+ };
  window.viewFn['join'] = function(param){
 
-     if(param.editorID != window.editorID)
-     {
-        var pingData = {"action":"ping","editorID": window.editorID, "editorColor": window.editorColor};
+     if(param.editorID != window.editorID) {
+         var pingData = {"action": "ping", "editorID": window.editorID, "editorColor": window.editorColor};
 
-        if(typeof $("#" + param.editorID).get(0) == "undefined")
-          window.addCaret(0,0,null,param.editorID,param.editorColor);
+         if (typeof $("#" + param.editorID).get(0) == "undefined")
+             window.addCaret(0, 0, null, param.editorID, param.editorColor);
 
-        stream.send(JSON.stringify(pingData));
+         stream.send(JSON.stringify(pingData));
      }
 
  };
@@ -411,6 +435,7 @@ $(document).ready(function(){
 
   $("#editorColor").css("background-color",window.editorColor);
   $("#page").documentize(stream.send);
+
   stream.registerCallback(exec);
 
 });

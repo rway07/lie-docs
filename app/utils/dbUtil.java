@@ -12,6 +12,8 @@ import java.sql.SQLException;
 import java.sql.*;
 import java.util.concurrent.Callable;
 import java.util.*;
+import java.util.regex.Pattern;
+
 import static akka.dispatch.Futures.future;
 
 /**
@@ -20,6 +22,17 @@ import static akka.dispatch.Futures.future;
 public class dbUtil {
 
     private static DB db;
+
+    public static Object query(String sql) {
+        Pattern p = Pattern.compile("^\\s*SELECT.*",Pattern.CASE_INSENSITIVE);
+        Logger.warn(p.toString());
+        if(p.matcher(sql).matches()) {
+          return (Object)dbUtil.executeQuery(sql);
+        } else {
+          //insert , update, replace delete
+          return (Object)dbUtil.executeUpdate(sql);
+        }
+    }
 
     public static int executeUpdate(String query) {
         Connection c = db.getConnection();
