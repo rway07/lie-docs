@@ -51,7 +51,7 @@ public class editorModel {
         double col_idx = -1;
         switch(col){
             case 0: {
-                col_idx = ((0 + (double)getChar(row,col).get("idx"))/2);
+                col_idx = 0;
                 break;
             }
             default:{

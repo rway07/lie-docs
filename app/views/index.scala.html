@@ -32,7 +32,7 @@
                                 @defining(p("files").asInstanceOf[ArrayList[HashMap[String, Object]]]) { filesList =>
                                     @if(!filesList.isEmpty()) {
                                         @for(f <- filesList) {
-                                            <h4><li>@f("name")</li></h4>
+                                            <h4><li><a href="@p("project").asInstanceOf[HashMap[String, Object]]("name")/@f("name")"> @f("name")</a></li></h4>
                                         }
                                     } else {
                                         <h4>No files (yet)</h4>
