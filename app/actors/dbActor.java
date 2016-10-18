@@ -103,7 +103,6 @@ public class dbActor extends UntypedActor {
 
             }
         }
-        Logger.info("ho finito e scrivo: " + resp.toString());
         getSender().tell(resp.toString(),getSelf());
     }
 

@@ -28,7 +28,6 @@ public class dbUtil {
 
     public static Object query(String sql) {
         Pattern p = Pattern.compile("^\\s*SELECT.*",Pattern.CASE_INSENSITIVE);
-        Logger.warn(p.toString());
         if(p.matcher(sql).matches()) {
           return (Object)dbUtil.executeQuery(sql);
         } else {
@@ -43,7 +42,6 @@ public class dbUtil {
         try {
             Statement s = c.createStatement();
             r = s.executeUpdate(query);
-            Logger.info("Query: rows affected: " + r);
         } catch (Exception e) {
             Logger.error("ERROR: " + e.getMessage() + " - " + e.getCause());
             return 0;
@@ -76,7 +74,7 @@ public class dbUtil {
                 }
                 list.add(row);
             }
-            Logger.error("CRISTO: " + list.toString());
+
         } catch (Exception e) {
             Logger.error("ERRORE: " + e.getMessage() + " - " + e.getCause());
             return null;

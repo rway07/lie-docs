@@ -33,7 +33,6 @@ public class jsonUtil {
        }
 
        arr.add(obj);
-       Logger.info("inserito in array: "+ arr.get(0).toString() + " righe presenti: " + arr.size());
     }
 
     public jsonUtil(String j){
@@ -60,17 +59,9 @@ public class jsonUtil {
     }
     public String toString(){
 
-        Logger.info("array usati: " + a.size());
         if(a.size() > 0)
-        {
-            Logger.info("hai usato un array");
             for(String key :a.keySet())
-            {
-                Logger.info("key: " + key);
                 this.put(key,a.get(key));
-            }
-
-        }
 
 
         return o.toJSONString();

@@ -436,8 +436,13 @@ window.onload = function(){
 };
 
 
+function compila()
+{
+    stream.send(JSON.stringify({"action":"compile"}))
+}
 
 $(document).ready(function(){
+
 
 
 
