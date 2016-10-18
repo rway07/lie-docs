@@ -31,6 +31,7 @@ public class dbActor extends UntypedActor {
 
         switch((String)m.get("action")){
             case "addChar": {
+                Logger.debug("STEA: char = " + m.get("chr").toString());
                 db.addChar((int)(long) m.get("r"),(int)(long) m.get("c"),(String)m.get("chr"));
                 break;
             }

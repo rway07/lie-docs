@@ -136,6 +136,7 @@ public class editorModel {
             sql.setInt(1,paragraphID);
             sql.setDouble(2,col_idx);
             sql.setString(3,chr);
+            Logger.debug("STEA: QUERY = " + sql.toString());
             sql.executeUpdate();
             conn.close();
 

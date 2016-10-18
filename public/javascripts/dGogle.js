@@ -755,26 +755,24 @@ $.fn.fn = function(e,notifyChange){
 
 $.fn.streamChar = function(e,notifyChange)
 {
+    if ((e.keyCode >= 33) && (e.keyCode <= 126))
+    //if(e.type=="keypress" && e.which !== 0 && !e.ctrlKey && !e.metaKey && !e.altKey)
+      {
+        e.preventDefault();
+        var char = String.fromCharCode(e.keyCode);
 
-  if(e.type=="keypress" && e.which !== 0 && !e.ctrlKey && !e.metaKey && !e.altKey)
-  {
-    e.preventDefault();
+        var paramAddChar = {
+          fn: "execAddChar",
+          r: row,
+          c: col,
+          author:window.editorID,
+          chr: char
+        };
+        var currRow = $('tr:eq('+parseInt(row)+')');
 
-    var char = String.fromCharCode(e.keyCode);
-
-    var paramAddChar = {
-      fn: "execAddChar",
-      r: row,
-      c: col,
-      author:window.editorID,
-      chr: char
-    };
-    var currRow = $('tr:eq('+parseInt(row)+')');
-
-    notifyChange($.fn.indices(currRow,'addChar',paramAddChar,true));
+        notifyChange($.fn.indices(currRow,'addChar',paramAddChar,true));
 
   }
-
 };
 
 $.fn.indices = function(currTr,action,func,prev,next) {

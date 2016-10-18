@@ -21,7 +21,6 @@ public class distributeCompileStub {
 
         HashMap<String, HashMap<String, ArrayList<String>>> list =
                 new HashMap<String, HashMap<String, ArrayList<String>>>();
-
         try {
             br = new BufferedReader(new FileReader(filename));
 
