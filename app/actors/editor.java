@@ -214,13 +214,11 @@ public class editor extends UntypedActor {
                                 break;
                             }
                             case "addRowNoMoveText": {
-                                jsonMsg.put("_subindex", "0");
-                                jsonMsg.put("_index", "0");
+                                f = ask(db,(Object)jsonMsg.toString(),1000);
                                 break;
                             }
                             case "addRowMoveText": {
-                                jsonMsg.put("_subindex", "0");
-                                jsonMsg.put("_index", "0");
+                                f = ask(db,(Object)jsonMsg.toString(),1000);
                                 break;
                             }
                             case "removeRow":

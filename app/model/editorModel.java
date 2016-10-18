@@ -44,6 +44,41 @@ public class editorModel {
         dbUtil.query("DELETE FROM `character` WHERE paragraph = " + chr.get("paragraph") + " and idx = " + chr.get("idx"));
     }
 
+    public void addRowMoveText(int row,int col){
+        Logger.info("inserisco dopo riga: " + row);
+        addRowNoMoveText(row);
+        Logger.info("aggiunta riga");
+
+        int currRowID = (int)getRow(row).get("id");
+        Logger.info("id riga corrente: " + currRowID);
+        int newRowID = (int)getRow(row+1).get("id");
+        Logger.info("id nuova riga: " + newRowID);
+
+        double cidx = (double)getChar(row,col).get("idx");
+
+        dbUtil.query("UPDATE `character` set paragraph = " + newRowID + " where paragraph = " + currRowID + " and idx >= " + cidx);
+    }
+
+    public void addRowNoMoveText(int row) {
+        double row_idx = -1;
+        long rows = this.countRows();
+        Logger.info("richiesto inserimento riga dopo: " +  row + " ci sono rows: " +rows );
+
+
+
+        if(row == 0 && rows == 0)
+            row_idx = 0;
+        else if(rows == row+1 ) {
+            Logger.info("*****secondo caso");
+            row_idx = ((double) getRow(row).get("idx")) + 1;
+        }else{
+            Logger.info("*****terzo caso");
+            row_idx = (((double)getRow(row).get("idx") + (double)getRow(row+1).get("idx"))/2);}
+
+        dbUtil.query("INSERT INTO `paragraph` (`file`, `idx`) VALUES ("+file+","+row_idx+")");
+
+    }
+
     public void addChar(int row, int col,String chr)
     {
         HashMap r = this.getRow(row);
@@ -58,11 +93,7 @@ public class editorModel {
                 long chars = this.countChars(row);
                 Logger.info("sono dentro:" + chars + " richista pos: " + col);
                 if(col == chars)
-                {
-
                     col_idx = ((double)getChar(row,(int)chars-1).get("idx"))+1;
-                }
-
                 else
                   col_idx = (((double)getChar(row,col).get("idx") + (double)getChar(row,col-1).get("idx"))/2);
                 break;
@@ -82,6 +113,7 @@ public class editorModel {
         return (HashMap)chars.get(col);
     }
 
+
     public long countChars(int row)
     {
         int paragraphID = (int)this.getRow(row).get("id");
@@ -92,6 +124,11 @@ public class editorModel {
 
         return (ArrayList) dbUtil.query("select * from `character` where paragraph = " + paragraphID + " order by idx asc");
     }
+
+    public long countRows(){
+        return (long)this.getRows().size();
+    }
+
     public ArrayList getRows() {
         return (ArrayList) dbUtil.query("select * from paragraph where file = "+file+" order by idx asc");
     }

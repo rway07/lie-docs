@@ -36,6 +36,16 @@ public class dbActor extends UntypedActor {
             }
             case "removeChar":{
                 db.removeChar((int)(long) m.get("r"),(int)(long) m.get("c"));
+                break;
+            }
+            case "addRowMoveText":{
+               Logger.info("dentro");
+               db.addRowMoveText((int)(long) m.get("r"),(int)(long) m.get("c"));
+               break;
+            }
+            case "addRowNoMoveText":{
+                db.addRowNoMoveText((int)(long) m.get("r"));
+                break;
             }
             case "init":{
                 if(!initialized)
@@ -52,27 +62,35 @@ public class dbActor extends UntypedActor {
                 Logger.info("sono actorDB ricevo OPEN");
                 int id = 0;
                 ArrayList  rows = db.getRows();
-                Iterator irow = rows.iterator();
-                resp.put("fn","open");
-                while(irow.hasNext())
-                {
-                    HashMap row = (HashMap) irow.next();
-                    id = (int)row.get("id");
-                    ArrayList rowChars = db.getChars(id);
-                    Iterator ichar = rowChars.iterator();
-                    String str = "";
-                    while(ichar.hasNext())
+                if(rows.size() > 0){
+                    Iterator irow = rows.iterator();
+                    resp.put("fn","open");
+                    while(irow.hasNext())
                     {
-                        HashMap c = (HashMap) ichar.next();
-                        str += (String)c.get("value");
-                    }
-                    jsonUtil jrow = new jsonUtil("");
-                    jrow.put("idx",row.get("idx"));
-                    jrow.put("str",str);
+                        HashMap row = (HashMap) irow.next();
+                        id = (int)row.get("id");
+                        ArrayList rowChars = db.getChars(id);
+                        Iterator ichar = rowChars.iterator();
+                        String str = "";
+                        while(ichar.hasNext())
+                        {
+                            HashMap c = (HashMap) ichar.next();
+                            str += (String)c.get("value");
+                        }
+                        jsonUtil jrow = new jsonUtil("");
+                        jrow.put("idx",row.get("idx"));
+                        jrow.put("str",str);
 
+                        resp.add("rows",jrow.getObject());
+                    }
+                }else{
+                    //file vuoto oppure nuovo
+                    db.addRowNoMoveText(0);
+                    jsonUtil jrow = new jsonUtil("");
+                    jrow.put("idx","0");
+                    jrow.put("str","");
                     resp.add("rows",jrow.getObject());
                 }
-
 
             }
         }

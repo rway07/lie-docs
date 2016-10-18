@@ -260,8 +260,7 @@ window.onload = function(){
     $(elem).insertAfter(currElem)
         .on('keydown keyup mouseup',function (e){$.fn.fn(e,stream.send);})
         .on('keypress',function (e){$.fn.streamChar(e,stream.send);})
-        .attr("_subindex",param._subindex)
-        .attr("_index",param._index);
+        .attr("_idx",param._idx)
 
 
     //update real caret
@@ -290,8 +289,7 @@ window.onload = function(){
       $(elem).insertAfter(currRow)
              .on('keydown keyup mouseup',function (e){$.fn.fn(e,stream.send);})
              .on('keypress',function (e){$.fn.streamChar(e,stream.send);})
-             .attr("_subindex",param._subindex)
-             .attr("_index",param._index);
+             .attr("_idx",param._idx)
 
       //update real caret
       if((window.row == param.r && window.col >= param.c) || window.row > param.r){
@@ -777,10 +775,8 @@ $.fn.indices = function(currTr,action,func,prev,next) {
    var domCurr = currTr.get(0);
    var domNext = (currTr.is(":last-child"))?null:currTr.next().get(0);
 
-   func['prevIndex'] = (typeof domCurr != 'undefined' && addPrev)?$(domCurr).attr('_index'):"null";
-   func['prevSubIndex']= (typeof domCurr != 'undefined' && addPrev)?$(domCurr).attr('_subindex'):"null";
-   func['nextIndex']= (domNext != null && addNext)?$(domNext).attr('_index'):"null";
-   func['nextSubIndex']=(domNext != null && addNext)?$(domNext).attr('_subindex'):"null";
+   func['currIdx'] = (typeof domCurr != 'undefined' && addPrev)?$(domCurr).attr('_idx'):"null";
+   func['nextIdx']= (domNext != null && addNext)?$(domNext).attr('_idx'):"null";
    func['action'] = action;
 
    return JSON.stringify(func);
