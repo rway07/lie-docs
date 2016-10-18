@@ -632,7 +632,7 @@ $.fn.fn = function(e,notifyChange){
               var streamPos = {
                       'fn':'execUpdatePosition',
                       'r':row,
-                      'c':(col>1)?window.subOrZero(col,1):col,
+                      'c':(col>0)?window.subOrZero(col,1):col,
                       'author':window.editorID,
                       'action':'updatePosition'
               };
@@ -755,7 +755,8 @@ $.fn.fn = function(e,notifyChange){
 
 $.fn.streamChar = function(e,notifyChange)
 {
-    if ((e.keyCode >= 33) && (e.keyCode <= 126))
+    console.log("STEA REGNA: " + e.keyCode);
+    if ((e.keyCode >= 32) && (e.keyCode <= 126))
     //if(e.type=="keypress" && e.which !== 0 && !e.ctrlKey && !e.metaKey && !e.altKey)
       {
         e.preventDefault();
