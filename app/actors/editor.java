@@ -6,16 +6,15 @@ import akka.event.Logging;
 import akka.event.LoggingAdapter;
 import akka.cluster.pubsub.*;
 import akka.util.Timeout;
+import messages.compileMessage;
+import messages.documentChanges;
 import scala.concurrent.Future;
 import static akka.pattern.Patterns.ask;
 
-import scala.util.parsing.json.JSONObject;
 import utils.*;
 
 import play.Logger;
 
-
-import model.*;
 
 import java.util.concurrent.TimeUnit;
 
@@ -33,6 +32,7 @@ public class editor extends UntypedActor {
     private String file;
     private String editorID;
     private String editorColor;
+    private ActorRef compilerManager = null;
 
     LoggingAdapter log = Logging.getLogger(getContext().system(), this);
 
@@ -42,16 +42,29 @@ public class editor extends UntypedActor {
 
 
     public editor(ActorRef out) {
+        this.router =  DistributedPubSub.get(system).mediator();
+        this.socket = out;
 
-      this.router =  DistributedPubSub.get(system).mediator();
-      this.socket = out;
+        ActorSelection sel = system.actorSelection("akka://application/user/compilerManager");
+        Future<ActorRef> future = sel.resolveOne(new Timeout(5, TimeUnit.SECONDS));
+
+        future.onComplete(new OnComplete<ActorRef>() {
+            @Override
+            public void onComplete(Throwable excp, ActorRef child) throws Throwable {
+                if (excp != null) {
+                    Logger.info("compilerManager non esisteto, lo creo");
+                    compilerManager = system.actorOf(Props.create(compilerManager.class),"compilerManager");
+                    Logger.debug("il manager si chiama: "+compilerManager.path().toString());
+                } else {
+                    compilerManager = child;
+                }
+            }
+        }, system.dispatcher());
 
     }
 
     @Override
     public void onReceive(Object message) {
-
-        try{
 
             if (message instanceof DistributedPubSubMediator.SubscribeAck){
                 Logger.info("conferma subscribe");
@@ -65,7 +78,7 @@ public class editor extends UntypedActor {
                 router.tell(new DistributedPubSubMediator.Publish(this.room, msg.toString()),getSelf());
 
             }
-            else if (message instanceof documentChanges ){
+            else if (message instanceof documentChanges){
                 socket.tell(((documentChanges)message).getMsg(),self());
             }else if (message instanceof String) {
 
@@ -175,7 +188,6 @@ public class editor extends UntypedActor {
                 }
                 else
                 {
-                    Logger.error("sono qui: " +  (String)jsonMsg.get("action"));
 
                     if(((String)jsonMsg.get("action")).equals("init")) {
                          jsonMsg.put("fn","init");
@@ -185,12 +197,20 @@ public class editor extends UntypedActor {
                         Future f = null;
                         switch ((String) jsonMsg.get("action")) {
                             //editor's view function helper
+                            case "compile":{
+                                compilerManager.tell(new compileMessage(),getSelf());
+                                compilerManager.tell(new compileMessage(),getSelf());
+                                compilerManager.tell(new compileMessage(),getSelf());
+                                compilerManager.tell(new compileMessage(),getSelf());
+                                compilerManager.tell(new compileMessage(),getSelf());
+                                compilerManager.tell(new compileMessage(),getSelf());
+                                break;
+                            }
                             case "open": {
                                 //read all documents line
                                 //build command for actorDB
                             jsonUtil openCmd = new jsonUtil("");
                             openCmd.put("action","open");
-                            Logger.info("richiedo open ad actorDB");
                             f = ask(db,(Object)openCmd.toString(),1000);
                             f.onSuccess(new OnSuccess<String>(){
                                 public void onSuccess(String result) {
@@ -205,42 +225,19 @@ public class editor extends UntypedActor {
                                 router.tell(new DistributedPubSubMediator.Publish(room, new documentChanges(jsonMsg.toString())), getSelf());
                                 break;
                             }
-                            case "addChar":{
+                            default: {
                                 f = ask(db,(Object)jsonMsg.toString(),1000);
+                                f.onSuccess(new OnSuccess() {
+                                    @Override
+                                    public void onSuccess(Object result) throws Throwable {
+                                        router.tell(new DistributedPubSubMediator.Publish(room, new documentChanges(jsonMsg.toString())), getSelf());
+
+                                    }
+                                },system.dispatcher());
                                 break;
                             }
-                            case "removeChar": {
-                                f = ask(db,(Object)jsonMsg.toString(),1000);
-                                break;
-                            }
-                            case "addRowNoMoveText": {
-                                f = ask(db,(Object)jsonMsg.toString(),1000);
-                                break;
-                            }
-                            case "addRowMoveText": {
-                                f = ask(db,(Object)jsonMsg.toString(),1000);
-                                break;
-                            }
-                            case "removeRowCanc":{
-                                f = ask(db,(Object)jsonMsg.toString(),1000);
-                                break;
-                            }
-                            case "removeRowBackspace":
-                            {
-                                f = ask(db,(Object)jsonMsg.toString(),1000);
-                                break;
-                            }
+
                         }
-
-                        f.onSuccess(new OnSuccess() {
-                            @Override
-                            public void onSuccess(Object result) throws Throwable {
-                                Logger.info("future completata con successo");
-                                Logger.warn("dico a tutti:" + jsonMsg.toString());
-                                router.tell(new DistributedPubSubMediator.Publish(room, new documentChanges(jsonMsg.toString())), getSelf());
-
-                            }
-                        },system.dispatcher());
 
                     }
                 }
@@ -252,9 +249,7 @@ public class editor extends UntypedActor {
             }
             else
                 unhandled(message);
-        }catch (Exception e){
-          Logger.error(e.getMessage() + " - " + e.getCause() + "-" + e.getStackTrace());
-        }
+
 
     }
 }
