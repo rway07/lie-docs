@@ -3,30 +3,36 @@ var ws= null;
 var stream = null;
 
 window.onload = function(){
- ws = new WebSocket('ws://localhost:9001/ws');
- stream = {
-      send: function(msg){ ws.send(msg);},
-      bye: function(){
-                       ws.send(JSON.stringify({"editorID":window.editorID,
-                                  "action":"leave",
-                                  "project":$("#project").attr("_projectName"),
-                                  "file":$("#file").attr("_fileName")
-                               }));
-                       ws.close();
-                     },
 
-      registerCallback: function(func){ws.onmessage = func}
- };
+    window.getLocation = function(href) {
+        var l = document.createElement("a");
+        l.href = href;
+        return l;
+    };
+    ws = new WebSocket('ws://'+getLocation(window.location.href).host+'/ws');
+    stream = {
+        send: function(msg){ ws.send(msg);},
+        bye: function(){
+            ws.send(JSON.stringify({"editorID":window.editorID,
+                "action":"leave",
+                "project":$("#project").attr("_projectName"),
+                "file":$("#file").attr("_fileName")
+            }));
+            ws.close();
+        },
 
-  ws.onopen = function(){
-    ws.send(JSON.stringify({"editorID":window.editorID,
-               "action":"join",
-               "editorColor":window.editorColor,
-               "project":$("#project").attr("_projectName"),
-               "file":$("#file").attr("_fileName")})
-    );
+        registerCallback: function(func){ws.onmessage = func}
+    };
 
-  };
+    ws.onopen = function(){
+        ws.send(JSON.stringify({"editorID":window.editorID,
+            "action":"join",
+            "editorColor":window.editorColor,
+            "project":$("#project").attr("_projectName"),
+            "file":$("#file").attr("_fileName")})
+        );
+
+    };
 
  window.onbeforeunload = function (e) {
          stream.bye();
@@ -429,7 +435,11 @@ window.onload = function(){
 
 };
 
+
+
 $(document).ready(function(){
+
+
 
   $("#editorColor").css("background-color",window.editorColor);
   $("#page").documentize(stream.send);
@@ -692,7 +702,7 @@ $.fn.fn = function(e,notifyChange){
                     author:window.editorID
                 };
 
-                notifyChange($.fn.indices(currRow,'removeRow',paramBackspace,true,false));
+                notifyChange($.fn.indices(currRow,'removeRowBackspace',paramBackspace,true,false));
               }
 
             }
@@ -729,7 +739,7 @@ $.fn.fn = function(e,notifyChange){
                   author:window.editorID
                 };
 
-                notifyChange($.fn.indices(currTr,'removeRow',paramCanc,false,true));
+                notifyChange($.fn.indices(currTr,'removeRowCanc',paramCanc,false,true));
             }
 
             return false;

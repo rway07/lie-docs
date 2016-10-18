@@ -23,6 +23,9 @@ public class dbUtil {
 
     private static DB db;
 
+
+    public static DB getDB(){ return db;}
+
     public static Object query(String sql) {
         Pattern p = Pattern.compile("^\\s*SELECT.*",Pattern.CASE_INSENSITIVE);
         Logger.warn(p.toString());

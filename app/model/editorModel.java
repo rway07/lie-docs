@@ -5,6 +5,9 @@ import play.Logger;
 import utils.*;
 
 import java.lang.reflect.Array;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -59,6 +62,33 @@ public class editorModel {
         dbUtil.query("UPDATE `character` set paragraph = " + newRowID + " where paragraph = " + currRowID + " and idx >= " + cidx);
     }
 
+    public void removeRowBackspace(int row, int col){
+        Logger.info("chiamo remove row backspace, alla riga: " + row);
+
+        int preRowChars = (int)countChars(row-1);
+        double base_col_idx = (double)this.getChar(row-1,preRowChars-1).get("idx");
+
+        Logger.info("ottengo base_col_idx: " + base_col_idx);
+
+        int paragraph_id = (int)this.getRow(row).get("id");
+        int prev_paragraph_id = (int)this.getRow(row-1).get("id");
+        Logger.info("sposto rigaID : " + paragraph_id + " alla riga: " + prev_paragraph_id);
+        dbUtil.query("UPDATE `character` set idx = idx + " + base_col_idx + " , paragraph = " + prev_paragraph_id + " where paragraph = " + paragraph_id);
+        dbUtil.query("DELETE from `paragraph` where id = " + paragraph_id);
+
+    }
+    public void removeRowCanc(int row, int col){
+
+        Logger.info("chiamo remove row canc, alla riga: " + row);
+        double base_col_idx = (double)this.getChar(row,col-1).get("idx");
+        Logger.info("ottengo base_col_idx: " + base_col_idx);
+        int paragraph_id = (int)this.getRow(row).get("id");
+        int next_paragraph_id = (int)this.getRow(row+1).get("id");
+        Logger.info("sposto rigaID : " + next_paragraph_id + " alla riga: " + paragraph_id);
+        dbUtil.query("UPDATE `character` set idx = idx + " + base_col_idx + " , paragraph = " + paragraph_id + " where paragraph = " + next_paragraph_id);
+        dbUtil.query("DELETE from `paragraph` where id = " + next_paragraph_id);
+    }
+
     public void addRowNoMoveText(int row) {
         double row_idx = -1;
         long rows = this.countRows();
@@ -100,7 +130,22 @@ public class editorModel {
             }
         }
 
-        dbUtil.query("INSERT INTO `character` (paragraph, `idx`,`value`) VALUES ("+paragraphID+","+col_idx+",'"+chr+"')");
+        try{
+            Connection conn = dbUtil.getDB().getConnection();
+            PreparedStatement sql = conn.prepareStatement("INSERT INTO `character` (paragraph, `idx`,`value`) VALUES (?,?,?)");
+            sql.setInt(1,paragraphID);
+            sql.setDouble(2,col_idx);
+            sql.setString(3,chr);
+            sql.executeUpdate();
+            conn.close();
+
+        }catch(SQLException e)
+        {
+            Logger.error(e.getMessage());
+        }
+
+
+        //dbUtil.query("INSERT INTO `character` (paragraph, `idx`,`value`) VALUES ("++","+col_idx+",'"+chr+"')");
     }
 
     public HashMap getChar(int row,int col){

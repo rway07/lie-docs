@@ -221,10 +221,13 @@ public class editor extends UntypedActor {
                                 f = ask(db,(Object)jsonMsg.toString(),1000);
                                 break;
                             }
-                            case "removeRow":
-                            case "addRow": {
-                                jsonMsg.put("_subindex", "0");
-                                jsonMsg.put("_index", "0");
+                            case "removeRowCanc":{
+                                f = ask(db,(Object)jsonMsg.toString(),1000);
+                                break;
+                            }
+                            case "removeRowBackspace":
+                            {
+                                f = ask(db,(Object)jsonMsg.toString(),1000);
                                 break;
                             }
                         }

@@ -38,6 +38,14 @@ public class dbActor extends UntypedActor {
                 db.removeChar((int)(long) m.get("r"),(int)(long) m.get("c"));
                 break;
             }
+            case "removeRowBackspace":{
+                db.removeRowBackspace((int)(long) m.get("r"),(int)(long) m.get("c"));
+                break;
+            }
+            case "removeRowCanc":{
+                db.removeRowCanc((int)(long) m.get("r"),(int)(long) m.get("c"));
+                break;
+            }
             case "addRowMoveText":{
                Logger.info("dentro");
                db.addRowMoveText((int)(long) m.get("r"),(int)(long) m.get("c"));
