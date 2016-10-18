@@ -74,19 +74,5 @@ public class HomeController extends Controller {
         return ok(index.render("lie-docs prototype", "", list));
     }
 
-    // Return the view for file's editing
-    public Result editor(String idProject) {
-        String projectName;
 
-        // Get the project name
-        ArrayList<HashMap<String, Object>> data =
-                dbUtil.executeQuery("select name from projects where id = " + idProject + ";");
-        projectName = (String)data.get(0).get("name");
-
-        // Get the project's files list
-        ArrayList<HashMap<String, Object>> list =
-                dbUtil.executeQuery("select id, name from files where project = " + idProject + ";");
-
-        return ok(editor.render("lie-docs prototype", "", idProject, projectName, list));
-    }
 }

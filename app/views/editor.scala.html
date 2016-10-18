@@ -1,10 +1,10 @@
-@(title: String, customHead:String, projectID:String, projectName:String, filesList:ArrayList[HashMap[String, Object]])
+@(title: String, projectID:String, projectName:String, fileName:String, filesList:ArrayList[HashMap[String, Object]])
 
-@header.common(title,customHead)
+@header.common(title, "")
 @header.editor()
     <input id="projectID" type="hidden" value="@projectID">
     <div id="project" _projectName="@projectName" style="display:none;" ></div>
-    <!--<div id="file" _fileName="" style="display:none;"></div>-->
+    <div id="file" _fileName="@fileName" style="display:none;"></div>
 
     <!-- TODO il modal per l'aggiunta del file non acquisisce il focus alla textbox correttamente -->
 @modals.new_file()
@@ -29,13 +29,14 @@
                     </ul>
                 </div>
                 <div class="main container col-sm-9 col-sm-offset-2"><!-- Document view -->
-                    <pre style="background-color:rgba(255,255,255,0); border:0;">
-                        <table id="page">
-                            <tr _index="0" _subindex="0">
-                                <td contenteditable="true">Put content here</td>
-                            </tr>
-                        </table>
-                    </pre>
+                    <div class="container" id="editorColor">&nbsp;</div>
+                    <div class="container">
+                        <pre style="background-color:rgba(255,255,255,0); border:0;">
+                            <table id="page">
+                                <tr _idx="0"><td contenteditable="true"></td></tr>
+                            </table>
+                        </pre>
+                    </div>
                 </div>
             </div>
         </div>

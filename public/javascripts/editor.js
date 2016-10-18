@@ -1,27 +1,23 @@
 /**
  * Created by kain on 15/10/16.
  */
-$(document).ready(function() {
-    $("#newFileButton").on("click", function() {
-        var id = $("#projectID").val();
-        var name = $("#fileName").val();
+function newFile() {
+    var id = $("#projectID").val();
+    var name = $("#fileName").val();
 
-        $.ajax({
-            url: "/project/" + id + "/file/" + name,
-            type: "post",
-            error: function(data) {
-                console.log(data);
-            },
-            success: function(data) {
-                addFileEntry(data.id, name);
-                $("#fileName").val("");
-                $("#newFileModal").modal('toggle');
-            }
-        });
+    $.ajax({
+        url: "/project/" + id + "/" + name,
+        type: "post",
+        error: function(data) {
+            console.log(data);
+        },
+        success: function(data) {
+            addFileEntry(data.id, name);
+            $("#fileName").val("");
+            $("#newFileModal").modal('toggle');
+        }
     });
-
-    fileDeleteEventListener();
-});
+}
 
 function fileDeleteEventListener() {
     $(document).on("click", ".remove_file", function() {
