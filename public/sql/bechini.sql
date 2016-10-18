@@ -3,7 +3,7 @@
 -- http://www.phpmyadmin.net
 --
 -- Host: localhost
--- Generation Time: Ott 13, 2016 alle 19:32
+-- Generation Time: Ott 18, 2016 alle 16:35
 -- Versione del server: 5.5.52-0+deb8u1
 -- PHP Version: 5.6.24-0+deb8u1
 
@@ -31,8 +31,7 @@ USE `bechini`;
 DROP TABLE IF EXISTS `character`;
 CREATE TABLE IF NOT EXISTS `character` (
   `paragraph` int(11) NOT NULL,
-  `idx` int(11) NOT NULL,
-  `subindex` double NOT NULL,
+  `idx` double NOT NULL,
   `value` varchar(1) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
@@ -40,10 +39,63 @@ CREATE TABLE IF NOT EXISTS `character` (
 -- Dump dei dati per la tabella `character`
 --
 
-INSERT INTO `character` (`paragraph`, `idx`, `subindex`, `value`) VALUES
-(1, 1, 1, 'A'),
-(2, 0, 1, 'B'),
-(2, 0, 3, 'C');
+INSERT INTO `character` (`paragraph`, `idx`, `value`) VALUES
+(33, 0, ' '),
+(33, 1, ' '),
+(33, 2, ' '),
+(33, 3, ' '),
+(33, 4, 'p'),
+(33, 5, 'r'),
+(33, 6, 'i'),
+(33, 7, 'n'),
+(33, 8, 't'),
+(33, 9, 'f'),
+(33, 10, '('),
+(33, 11, '"'),
+(33, 12, 'H'),
+(33, 13, 'E'),
+(33, 14, 'L'),
+(33, 15, 'L'),
+(33, 16, 'O'),
+(33, 17, ' '),
+(33, 18, 'S'),
+(33, 19, 'T'),
+(33, 20, 'E'),
+(33, 21, 'A'),
+(33, 22, '\\'),
+(33, 23, 'n'),
+(33, 24, '"'),
+(33, 25, ')'),
+(33, 26, ';'),
+(36, 0, ' '),
+(36, 1, ' '),
+(36, 2, ' '),
+(36, 3, ' '),
+(36, 4, 'r'),
+(36, 5, 'e'),
+(36, 6, 't'),
+(36, 7, 'u'),
+(36, 8, 'r'),
+(36, 9, 'n'),
+(36, 10, ' '),
+(36, 11, '0'),
+(36, 12, ';'),
+(39, 0, '{'),
+(39, 1, 'o'),
+(39, 2, 'i'),
+(39, 3, 'd'),
+(39, 4, ' '),
+(39, 5, 'm'),
+(39, 6, 'a'),
+(39, 7, 'i'),
+(39, 8, 'n'),
+(39, 9, '('),
+(39, 10, 'v'),
+(39, 11, 'o'),
+(39, 12, 'i'),
+(39, 13, 'd'),
+(39, 14, ')'),
+(39, 15, ' ');
 
 -- --------------------------------------------------------
 
@@ -65,7 +117,7 @@ CREATE TABLE IF NOT EXISTS `files` (
 INSERT INTO `files` (`id`, `project`, `name`) VALUES
 (1, 1, '0'),
 (4, 1, '0'),
-(5, 1, 'fffff');
+(5, 1, 'demo');
 
 -- --------------------------------------------------------
 
@@ -77,18 +129,20 @@ DROP TABLE IF EXISTS `paragraph`;
 CREATE TABLE IF NOT EXISTS `paragraph` (
 `id` int(11) NOT NULL,
   `file` int(11) NOT NULL,
-  `idx` int(11) NOT NULL,
-  `subindex` int(11) NOT NULL
-) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=latin1;
+  `idx` double NOT NULL DEFAULT '0'
+) ENGINE=InnoDB AUTO_INCREMENT=40 DEFAULT CHARSET=latin1;
 
 --
 -- Dump dei dati per la tabella `paragraph`
 --
 
-INSERT INTO `paragraph` (`id`, `file`, `idx`, `subindex`) VALUES
-(1, 1, 1, 1),
-(2, 5, 0, 1),
-(4, 5, 0, 7);
+INSERT INTO `paragraph` (`id`, `file`, `idx`) VALUES
+(27, 5, 0),
+(33, 5, 2),
+(34, 5, 3),
+(35, 5, 4),
+(36, 5, 3.5),
+(39, 5, 1);
 
 -- --------------------------------------------------------
 
@@ -117,7 +171,7 @@ INSERT INTO `projects` (`id`, `name`) VALUES
 -- Indexes for table `character`
 --
 ALTER TABLE `character`
- ADD PRIMARY KEY (`paragraph`,`idx`,`subindex`), ADD KEY `idx` (`idx`), ADD KEY `subindex` (`subindex`);
+ ADD PRIMARY KEY (`paragraph`,`idx`), ADD KEY `idx` (`idx`);
 
 --
 -- Indexes for table `files`
@@ -129,7 +183,7 @@ ALTER TABLE `files`
 -- Indexes for table `paragraph`
 --
 ALTER TABLE `paragraph`
- ADD PRIMARY KEY (`id`,`idx`,`subindex`), ADD UNIQUE KEY `id` (`id`), ADD KEY `idx` (`idx`), ADD KEY `subindex` (`subindex`), ADD KEY `file` (`file`);
+ ADD PRIMARY KEY (`id`,`idx`), ADD UNIQUE KEY `id` (`id`), ADD KEY `subindex` (`idx`), ADD KEY `file` (`file`);
 
 --
 -- Indexes for table `projects`
@@ -150,7 +204,7 @@ MODIFY `id` int(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=6;
 -- AUTO_INCREMENT for table `paragraph`
 --
 ALTER TABLE `paragraph`
-MODIFY `id` int(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=5;
+MODIFY `id` int(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=40;
 --
 -- AUTO_INCREMENT for table `projects`
 --
