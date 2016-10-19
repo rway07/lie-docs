@@ -10,6 +10,8 @@ import play.Logger;
 import scala.concurrent.Future;
 import utils.cProject;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.concurrent.TimeUnit;
 
@@ -53,6 +55,9 @@ public class compilerManager extends UntypedActor{
 
         if(message instanceof compileMessage)
         {
+
+            
+
             cProject prova = new cProject();
 
             // get c dal db

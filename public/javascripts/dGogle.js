@@ -417,7 +417,7 @@ function compila()
 $(document).ready(function(){
 
     init();
-    
+
     var getLocation = function(href) {
         var l = document.createElement("a");
         l.href = href;
