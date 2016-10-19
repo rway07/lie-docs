@@ -2,9 +2,9 @@
 var ws= null;
 var stream = null;
 
-window.onload = function(){
+function init(){
 
-    
+    console.log("onload window");
 
     window.onbeforeunload = function (e) {
          stream.bye();
@@ -416,6 +416,8 @@ function compila()
 
 $(document).ready(function(){
 
+    init();
+    
     var getLocation = function(href) {
         var l = document.createElement("a");
         l.href = href;
