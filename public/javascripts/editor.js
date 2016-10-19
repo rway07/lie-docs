@@ -1,6 +1,7 @@
 /**
  * Created by kain on 15/10/16.
  */
+
 function newFile() {
     var id = $("#projectID").val();
     var name = $("#fileName").val();

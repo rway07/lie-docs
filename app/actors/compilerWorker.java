@@ -29,8 +29,8 @@ public class compilerWorker extends UntypedActor{
         }
 
 
-        /*
-        ProcessBuilder pb = new ProcessBuilder("gcc", "--version");
+
+        ProcessBuilder pb = new ProcessBuilder("conta");
 
         Map<String, String> env = pb.environment();
         // If you want clean environment, call env.clear() first
@@ -49,7 +49,6 @@ public class compilerWorker extends UntypedActor{
         BufferedReader stdError = new BufferedReader(new InputStreamReader(proc.getErrorStream()));
 
         // read the output from the command
-        System.out.println("Here is the standard output of the command:\n");
         String s = null;
         while ((s = stdInput.readLine()) != null)
         {
@@ -61,7 +60,7 @@ public class compilerWorker extends UntypedActor{
         {
             Logger.error(s);
         }
-        */
+
 
         //getSelf().tell("sono un compilatore",getSender());
     }

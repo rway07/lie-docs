@@ -4,39 +4,11 @@ var stream = null;
 
 window.onload = function(){
 
-    window.getLocation = function(href) {
-        var l = document.createElement("a");
-        l.href = href;
-        return l;
-    };
-    ws = new WebSocket('ws://'+getLocation(window.location.href).host+'/ws');
-    stream = {
-        send: function(msg){ ws.send(msg);},
-        bye: function(){
-            ws.send(JSON.stringify({"editorID":window.editorID,
-                "action":"leave",
-                "project":$("#project").attr("_projectName"),
-                "file":$("#file").attr("_fileName")
-            }));
-            ws.close();
-        },
+    
 
-        registerCallback: function(func){ws.onmessage = func}
-    };
-
-    ws.onopen = function(){
-        ws.send(JSON.stringify({"editorID":window.editorID,
-            "action":"join",
-            "editorColor":window.editorColor,
-            "project":$("#project").attr("_projectName"),
-            "file":$("#file").attr("_fileName")})
-        );
-
-    };
-
- window.onbeforeunload = function (e) {
+    window.onbeforeunload = function (e) {
          stream.bye();
-  };
+    };
 
  window.row=0;
  window.col=0;
@@ -431,10 +403,11 @@ window.onload = function(){
      {
        window.addCaret(0,0,null,param.editorID,param.editorColor);
      }
- }
+ };
+
+
 
 };
-
 
 function compila()
 {
@@ -442,6 +415,37 @@ function compila()
 }
 
 $(document).ready(function(){
+
+    var getLocation = function(href) {
+        var l = document.createElement("a");
+        l.href = href;
+        return l;
+    };
+    
+    ws = new WebSocket('ws://'+getLocation(window.location.href).host+'/ws');
+    stream = {
+        send: function(msg){ ws.send(msg);},
+        bye: function(){
+            ws.send(JSON.stringify({"editorID":window.editorID,
+                "action":"leave",
+                "project":$("#project").attr("_projectName"),
+                "file":$("#file").attr("_fileName")
+            }));
+            ws.close();
+        },
+
+        registerCallback: function(func){ws.onmessage = func}
+    };
+
+    ws.onopen = function(){
+        ws.send(JSON.stringify({"editorID":window.editorID,
+            "action":"join",
+            "editorColor":window.editorColor,
+            "project":$("#project").attr("_projectName"),
+            "file":$("#file").attr("_fileName")})
+        );
+
+    };
 
   $("#editorColor").css("background-color",window.editorColor);
   $("#page").documentize(stream.send);

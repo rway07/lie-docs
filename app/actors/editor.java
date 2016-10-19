@@ -199,11 +199,6 @@ public class editor extends UntypedActor {
                             //editor's view function helper
                             case "compile":{
                                 compilerManager.tell(new compileMessage(),getSelf());
-                                compilerManager.tell(new compileMessage(),getSelf());
-                                compilerManager.tell(new compileMessage(),getSelf());
-                                compilerManager.tell(new compileMessage(),getSelf());
-                                compilerManager.tell(new compileMessage(),getSelf());
-                                compilerManager.tell(new compileMessage(),getSelf());
                                 break;
                             }
                             case "open": {
