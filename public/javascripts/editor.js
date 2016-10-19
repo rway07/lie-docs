@@ -13,7 +13,7 @@ function newFile() {
             console.log(data);
         },
         success: function(data) {
-            addFileEntry(data.id, name);
+            addFileEntry(id, data.id, name);
             $("#fileName").val("");
             $("#newFileModal").modal('toggle');
         }
@@ -38,10 +38,12 @@ function fileDeleteEventListener() {
     });
 }
 
-function addFileEntry(id, name) {
+function addFileEntry(project_id, id, name) {
     $("#filesList")
         .append('<div id="container-' + id + '">' +
-            '<li><strong> ' + name + ' </strong></li><i id="' + id + '" class="remove_file fa fa-trash"></i>' +
+            '<li><strong><a href="/project/' + project_id + '/' + id + '">' +
+             name + ' </a></strong></li><i id="' + id + '" onclick="fileDeleteEventListener();"' +
+            'class="remove_file fa fa-trash"></i>' +
             '</div>');
 }
 
