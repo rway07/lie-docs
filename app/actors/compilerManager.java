@@ -8,7 +8,9 @@ import messages.compileMessage;
 import messages.updateCompile;
 import play.Logger;
 import scala.concurrent.Future;
+import utils.cProject;
 
+import java.util.Iterator;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -20,8 +22,15 @@ public class compilerManager extends UntypedActor{
     private ActorRef db = null;
 
 
-    public compilerManager()
-    {
+    //manager: 1- ottiene tutti i c del progetto
+    //         2- analizza gli include locali
+    //         3- distribuisce file c e include necessari al worker
+    //         4- attende file o da tutti i worker
+    //         5- linka il risultato
+
+    public compilerManager(String project, ActorRef db) {
+        this.db = db;
+
         ActorSelection sel = getContext().system().actorSelection("akka://application/user/workerRouter");
         Future<ActorRef> future = sel.resolveOne(new Timeout(5, TimeUnit.SECONDS));
 
@@ -44,11 +53,34 @@ public class compilerManager extends UntypedActor{
 
         if(message instanceof compileMessage)
         {
-            Logger.info("DEVO COMPILARE, CHE PALLE");
+            cProject prova = new cProject();
+
+            // get c dal db
+            prova.addSource("enrico.c","#include <stdio.h>\n #include\"puru.h\"\n #include \"indrit.h\"\n #include \"enrico.h\" void main(int c){return}");
+            prova.addSource("puru.c","#include \"puru.h\"\n void somma(){}");
+
+            //carico tutti gli h necessari
+            Iterator<String> reqHeaders = prova.getHeaders();
+            while(reqHeaders.hasNext())
+            {
+                String header = reqHeaders.next();
+                prova.addHeaderContent(header,"contenuto");
+            }
+
+            //ottengo tutto cio che devo compilare
+            Iterator<String> sources = prova.getSources();
+            while(sources.hasNext())
+            {
+                cProject f = prova.getSourceHeaders(sources.next());
+                Logger.debug(f.toString());
+            }
+
+
             workerRouter.tell(message,getSelf());
         }else if( message instanceof updateCompile)
         {
-            Logger.debug(((updateCompile) message).getStatus());
+            Logger.info("MANAGER: forwardo aggiornamento");
+            ((updateCompile) message).getSender().tell(message,getSelf());
         }
 
 

@@ -32,7 +32,7 @@ public class editorModel {
     public void setFile(String file){
        this.file = this.getFileID(file,this.project);
     }
-
+    
 
     public HashMap getRow(int row){
         ArrayList rows = this.getRows();
@@ -141,14 +141,9 @@ public class editorModel {
             sql.setString(3, chr);
             Logger.debug("STEA: QUERY = " + sql.toString());
             sql.executeUpdate();
-            sql = conn.prepareStatement(
-                    "UPDATE `character` c, (SELECT *,\n" +
-                    "          @curRank := @curRank + 1 AS rank\n" +
-                    "FROM `character` c, (SELECT @curRank := 0) r\n" +
-                    "where paragraph = ?\n" +
-                    "ORDER BY  idx asc) r\n" +
-                    "SET c.idx = r.rank\n" +
-                    "WHERE c.idx = r.idx and c.paragraph = r.paragraph and c.paragraph = ?;");
+            sql = conn.prepareStatement("UPDATE `character` c, "+
+                    "(SELECT *,@curRank := @curRank + 1 AS rank FROM `character` c, (SELECT @curRank := 0) r where paragraph = ? ORDER BY  idx asc) r " +
+                    "SET c.idx = r.rank WHERE c.idx = r.idx and c.paragraph = r.paragraph and c.paragraph = ?;");
             sql.setInt(1, paragraphID);
             sql.setInt(2, paragraphID);
             sql.executeUpdate();
