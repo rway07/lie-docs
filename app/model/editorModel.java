@@ -50,7 +50,7 @@ public class editorModel {
 
         Logger.info("------------------ \n + " + file);
 
-
+        return file;
 
 
     }
