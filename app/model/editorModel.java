@@ -101,7 +101,7 @@ public class editorModel {
             Logger.info("*****terzo caso");
             row_idx = (((double)getRow(file,row).get("idx") + (double)getRow(file,row+1).get("idx"))/2);}
 
-        dbUtil.query("INSERT INTO `paragraph` (`file`, `idx`) VALUES ("+file+","+row_idx+")");
+        dbUtil.query("INSERT INTO `paragraph` (`file`, `idx`) VALUES ("+getFileID(file,project)+","+row_idx+")");
 
     }
 
