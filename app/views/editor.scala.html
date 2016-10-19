@@ -23,7 +23,14 @@
                     <ul id="filesList" class="list">
                         @for(f <- filesList) {
                             <div id="container-@f("id")">
-                                <li><strong> @f("name")</strong></li><i id="@f("id")" class="remove_file fa fa-trash"></i>
+                                <li>
+                                    <strong>
+                                        <a href="/project/@projectID/@f("id")">
+                                        @f("name")
+                                        </a>
+                                    </strong>
+                                </li>
+                                <i id="@f("id")" class="remove_file fa fa-trash"></i>
                             </div>
                         }
                     </ul>
