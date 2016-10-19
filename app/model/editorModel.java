@@ -116,7 +116,7 @@ public class editorModel {
     {
         HashMap r = this.getRow(row);
         int paragraphID = (int)r.get("id");
-        float col_idx = -1;
+        double col_idx = -1;
         switch(col){
             case 0: {
                 col_idx = 0;
@@ -126,9 +126,9 @@ public class editorModel {
                 long chars = this.countChars(row);
                 Logger.info("sono dentro:" + chars + " richista pos: " + col);
                 if(col == chars)
-                    col_idx = (float)getChar(row, (int)chars-1).get("idx");
+                    col_idx = (double)getChar(row, (int)chars-1).get("idx") + 1;
                 else
-                    col_idx = (((float)getChar(row,col).get("idx") + (float)getChar(row,col-1).get("idx"))/2);
+                    col_idx = (((double)getChar(row, col).get("idx") + (double)getChar(row, col-1).get("idx")) / 2);
                 break;
             }
         }
@@ -137,7 +137,7 @@ public class editorModel {
             Connection conn = dbUtil.getDB().getConnection();
             PreparedStatement sql = conn.prepareStatement("INSERT INTO `character` (paragraph, `idx`,`value`) VALUES (?,?,?)");
             sql.setInt(1, paragraphID);
-            sql.setFloat(2, col_idx);
+            sql.setDouble(2, col_idx);
             sql.setString(3, chr);
             Logger.debug("STEA: QUERY = " + sql.toString());
             sql.executeUpdate();
