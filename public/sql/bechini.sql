@@ -1,182 +1,100 @@
--- phpMyAdmin SQL Dump
--- version 4.2.12deb2+deb8u2
--- http://www.phpmyadmin.net
+CREATE DATABASE  IF NOT EXISTS `bechini` /*!40100 DEFAULT CHARACTER SET utf8 */;
+USE `bechini`;
+-- MySQL dump 10.13  Distrib 5.7.9, for osx10.9 (x86_64)
 --
--- Host: localhost
--- Generation Time: Ott 19, 2016 alle 18:43
--- Versione del server: 5.5.52-0+deb8u1
--- PHP Version: 5.6.24-0+deb8u1
-
-SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
-SET time_zone = "+00:00";
-
+-- Host: localhost    Database: bechini
+-- ------------------------------------------------------
+-- Server version	5.5.5-10.1.17-MariaDB
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
 /*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
 /*!40101 SET NAMES utf8 */;
+/*!40103 SET @OLD_TIME_ZONE=@@TIME_ZONE */;
+/*!40103 SET TIME_ZONE='+00:00' */;
+/*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;
+/*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
+/*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
+/*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
 --
--- Database: `bechini`
---
-CREATE DATABASE IF NOT EXISTS `bechini` DEFAULT CHARACTER SET latin1 COLLATE latin1_swedish_ci;
-USE `bechini`;
-
--- --------------------------------------------------------
-
---
--- Struttura della tabella `character`
+-- Table structure for table `character`
 --
 
 DROP TABLE IF EXISTS `character`;
-CREATE TABLE IF NOT EXISTS `character` (
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `character` (
   `paragraph` int(11) NOT NULL,
-`id` int(11) NOT NULL,
-  `idx` decimal(65,30) NOT NULL,
-  `value` varchar(1) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
-
--- --------------------------------------------------------
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `idx` double NOT NULL,
+  `value` varchar(1) NOT NULL,
+  PRIMARY KEY (`paragraph`,`id`),
+  KEY `id` (`id`),
+  KEY `idx` (`idx`),
+  CONSTRAINT `character_ibfk_1` FOREIGN KEY (`paragraph`) REFERENCES `paragraph` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=888 DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Struttura della tabella `files`
+-- Table structure for table `files`
 --
 
 DROP TABLE IF EXISTS `files`;
-CREATE TABLE IF NOT EXISTS `files` (
-`id` int(11) NOT NULL,
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `files` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `project` int(11) NOT NULL,
-  `name` varchar(11) NOT NULL
+  `name` varchar(11) NOT NULL,
+  PRIMARY KEY (`id`,`project`),
+  UNIQUE KEY `id_2` (`id`),
+  KEY `name` (`name`),
+  KEY `project` (`project`),
+  CONSTRAINT `files_ibfk_1` FOREIGN KEY (`project`) REFERENCES `projects` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Dump dei dati per la tabella `files`
---
-
-INSERT INTO `files` (`id`, `project`, `name`) VALUES
-(1, 1, '0'),
-(4, 1, '0'),
-(5, 1, 'demo');
-
--- --------------------------------------------------------
-
---
--- Struttura della tabella `paragraph`
+-- Table structure for table `paragraph`
 --
 
 DROP TABLE IF EXISTS `paragraph`;
-CREATE TABLE IF NOT EXISTS `paragraph` (
-`id` int(11) NOT NULL,
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `paragraph` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `file` int(11) NOT NULL,
-  `idx` double NOT NULL DEFAULT '0'
-) ENGINE=InnoDB AUTO_INCREMENT=41 DEFAULT CHARSET=latin1;
+  `idx` double NOT NULL DEFAULT '0',
+  PRIMARY KEY (`id`,`idx`),
+  UNIQUE KEY `id` (`id`),
+  KEY `subindex` (`idx`),
+  KEY `file` (`file`),
+  CONSTRAINT `paragraph_ibfk_1` FOREIGN KEY (`file`) REFERENCES `files` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=91 DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Dump dei dati per la tabella `paragraph`
---
-
-INSERT INTO `paragraph` (`id`, `file`, `idx`) VALUES
-(40, 1, 0),
-(27, 5, 0),
-(33, 5, 2),
-(34, 5, 3),
-(35, 5, 4),
-(36, 5, 3.5),
-(39, 5, 1);
-
--- --------------------------------------------------------
-
---
--- Struttura della tabella `projects`
+-- Table structure for table `projects`
 --
 
 DROP TABLE IF EXISTS `projects`;
-CREATE TABLE IF NOT EXISTS `projects` (
-`id` int(11) NOT NULL,
-  `name` varchar(50) NOT NULL
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `projects` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `name` varchar(50) NOT NULL,
+  PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+/*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
---
--- Dump dei dati per la tabella `projects`
---
-
-INSERT INTO `projects` (`id`, `name`) VALUES
-(1, 'demo');
-
---
--- Indexes for dumped tables
---
-
---
--- Indexes for table `character`
---
-ALTER TABLE `character`
- ADD PRIMARY KEY (`paragraph`,`id`), ADD KEY `id` (`id`), ADD KEY `idx` (`idx`);
-
---
--- Indexes for table `files`
---
-ALTER TABLE `files`
- ADD PRIMARY KEY (`id`,`project`), ADD UNIQUE KEY `id_2` (`id`), ADD KEY `name` (`name`), ADD KEY `project` (`project`);
-
---
--- Indexes for table `paragraph`
---
-ALTER TABLE `paragraph`
- ADD PRIMARY KEY (`id`,`idx`), ADD UNIQUE KEY `id` (`id`), ADD KEY `subindex` (`idx`), ADD KEY `file` (`file`);
-
---
--- Indexes for table `projects`
---
-ALTER TABLE `projects`
- ADD PRIMARY KEY (`id`);
-
---
--- AUTO_INCREMENT for dumped tables
---
-
---
--- AUTO_INCREMENT for table `character`
---
-ALTER TABLE `character`
-MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
---
--- AUTO_INCREMENT for table `files`
---
-ALTER TABLE `files`
-MODIFY `id` int(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=6;
---
--- AUTO_INCREMENT for table `paragraph`
---
-ALTER TABLE `paragraph`
-MODIFY `id` int(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=41;
---
--- AUTO_INCREMENT for table `projects`
---
-ALTER TABLE `projects`
-MODIFY `id` int(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=2;
---
--- Limiti per le tabelle scaricate
---
-
---
--- Limiti per la tabella `character`
---
-ALTER TABLE `character`
-ADD CONSTRAINT `character_ibfk_1` FOREIGN KEY (`paragraph`) REFERENCES `paragraph` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
-
---
--- Limiti per la tabella `files`
---
-ALTER TABLE `files`
-ADD CONSTRAINT `files_ibfk_1` FOREIGN KEY (`project`) REFERENCES `projects` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
-
---
--- Limiti per la tabella `paragraph`
---
-ALTER TABLE `paragraph`
-ADD CONSTRAINT `paragraph_ibfk_1` FOREIGN KEY (`file`) REFERENCES `files` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
-
+/*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
+/*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
+/*!40014 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS */;
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
 /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
+/*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
+
+-- Dump completed on 2016-10-20  0:23:17
