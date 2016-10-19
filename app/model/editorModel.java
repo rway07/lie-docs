@@ -27,8 +27,6 @@ public class editorModel {
         project = this.getProjectID(prj);
     }
 
-    
-
     public HashMap getRow(String file,int row){
         ArrayList rows = this.getRows(file);
         return (HashMap) rows.get(row);
