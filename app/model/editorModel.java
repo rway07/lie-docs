@@ -41,8 +41,11 @@ public class editorModel {
 
     public void removeChar(int row, int col){
         long chars = this.countChars(row);
+        Logger.debug("PAY ATTENTION: " + chars + " row = " + row + " col = " + col);
+
         if(col == chars) col--;
 
+        Logger.debug("PAY ATTENTION: " + chars + " row = " + row + " col = " + col);
         HashMap chr = getChar(row,col);
         dbUtil.query("DELETE FROM `character` WHERE paragraph = " + chr.get("paragraph") + " and idx = " + chr.get("idx"));
     }
@@ -109,11 +112,11 @@ public class editorModel {
 
     }
 
-    public void addChar(int row, int col,String chr)
+    public void addChar(int row, int col, String chr)
     {
         HashMap r = this.getRow(row);
         int paragraphID = (int)r.get("id");
-        double col_idx = -1;
+        float col_idx = -1;
         switch(col){
             case 0: {
                 col_idx = 0;
@@ -123,9 +126,9 @@ public class editorModel {
                 long chars = this.countChars(row);
                 Logger.info("sono dentro:" + chars + " richista pos: " + col);
                 if(col == chars)
-                    col_idx = ((double)getChar(row,(int)chars-1).get("idx"))+1;
+                    col_idx = (float)getChar(row, (int)chars-1).get("idx");
                 else
-                  col_idx = (((double)getChar(row,col).get("idx") + (double)getChar(row,col-1).get("idx"))/2);
+                    col_idx = (((float)getChar(row,col).get("idx") + (float)getChar(row,col-1).get("idx"))/2);
                 break;
             }
         }
@@ -133,10 +136,21 @@ public class editorModel {
         try{
             Connection conn = dbUtil.getDB().getConnection();
             PreparedStatement sql = conn.prepareStatement("INSERT INTO `character` (paragraph, `idx`,`value`) VALUES (?,?,?)");
-            sql.setInt(1,paragraphID);
-            sql.setDouble(2,col_idx);
-            sql.setString(3,chr);
+            sql.setInt(1, paragraphID);
+            sql.setFloat(2, col_idx);
+            sql.setString(3, chr);
             Logger.debug("STEA: QUERY = " + sql.toString());
+            sql.executeUpdate();
+            sql = conn.prepareStatement(
+                    "UPDATE `character` c, (SELECT *,\n" +
+                    "          @curRank := @curRank + 1 AS rank\n" +
+                    "FROM `character` c, (SELECT @curRank := 0) r\n" +
+                    "where paragraph = ?\n" +
+                    "ORDER BY  idx asc) r\n" +
+                    "SET c.idx = r.rank\n" +
+                    "WHERE c.idx = r.idx and c.paragraph = r.paragraph and c.paragraph = ?;");
+            sql.setInt(1, paragraphID);
+            sql.setInt(2, paragraphID);
             sql.executeUpdate();
             conn.close();
 
