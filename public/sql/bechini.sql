@@ -3,7 +3,7 @@
 -- http://www.phpmyadmin.net
 --
 -- Host: localhost
--- Generation Time: Ott 18, 2016 alle 16:35
+-- Generation Time: Ott 19, 2016 alle 18:43
 -- Versione del server: 5.5.52-0+deb8u1
 -- PHP Version: 5.6.24-0+deb8u1
 
@@ -31,71 +31,10 @@ USE `bechini`;
 DROP TABLE IF EXISTS `character`;
 CREATE TABLE IF NOT EXISTS `character` (
   `paragraph` int(11) NOT NULL,
-  `idx` double NOT NULL,
+`id` int(11) NOT NULL,
+  `idx` decimal(65,30) NOT NULL,
   `value` varchar(1) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
-
---
--- Dump dei dati per la tabella `character`
---
-
-INSERT INTO `character` (`paragraph`, `idx`, `value`) VALUES
-(33, 0, ' '),
-(33, 1, ' '),
-(33, 2, ' '),
-(33, 3, ' '),
-(33, 4, 'p'),
-(33, 5, 'r'),
-(33, 6, 'i'),
-(33, 7, 'n'),
-(33, 8, 't'),
-(33, 9, 'f'),
-(33, 10, '('),
-(33, 11, '"'),
-(33, 12, 'H'),
-(33, 13, 'E'),
-(33, 14, 'L'),
-(33, 15, 'L'),
-(33, 16, 'O'),
-(33, 17, ' '),
-(33, 18, 'S'),
-(33, 19, 'T'),
-(33, 20, 'E'),
-(33, 21, 'A'),
-(33, 22, '\\'),
-(33, 23, 'n'),
-(33, 24, '"'),
-(33, 25, ')'),
-(33, 26, ';'),
-(36, 0, ' '),
-(36, 1, ' '),
-(36, 2, ' '),
-(36, 3, ' '),
-(36, 4, 'r'),
-(36, 5, 'e'),
-(36, 6, 't'),
-(36, 7, 'u'),
-(36, 8, 'r'),
-(36, 9, 'n'),
-(36, 10, ' '),
-(36, 11, '0'),
-(36, 12, ';'),
-(39, 0, '{'),
-(39, 1, 'o'),
-(39, 2, 'i'),
-(39, 3, 'd'),
-(39, 4, ' '),
-(39, 5, 'm'),
-(39, 6, 'a'),
-(39, 7, 'i'),
-(39, 8, 'n'),
-(39, 9, '('),
-(39, 10, 'v'),
-(39, 11, 'o'),
-(39, 12, 'i'),
-(39, 13, 'd'),
-(39, 14, ')'),
-(39, 15, ' ');
 
 -- --------------------------------------------------------
 
@@ -130,13 +69,14 @@ CREATE TABLE IF NOT EXISTS `paragraph` (
 `id` int(11) NOT NULL,
   `file` int(11) NOT NULL,
   `idx` double NOT NULL DEFAULT '0'
-) ENGINE=InnoDB AUTO_INCREMENT=40 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=41 DEFAULT CHARSET=latin1;
 
 --
 -- Dump dei dati per la tabella `paragraph`
 --
 
 INSERT INTO `paragraph` (`id`, `file`, `idx`) VALUES
+(40, 1, 0),
 (27, 5, 0),
 (33, 5, 2),
 (34, 5, 3),
@@ -171,7 +111,7 @@ INSERT INTO `projects` (`id`, `name`) VALUES
 -- Indexes for table `character`
 --
 ALTER TABLE `character`
- ADD PRIMARY KEY (`paragraph`,`idx`), ADD KEY `idx` (`idx`);
+ ADD PRIMARY KEY (`paragraph`,`id`), ADD KEY `id` (`id`), ADD KEY `idx` (`idx`);
 
 --
 -- Indexes for table `files`
@@ -196,6 +136,11 @@ ALTER TABLE `projects`
 --
 
 --
+-- AUTO_INCREMENT for table `character`
+--
+ALTER TABLE `character`
+MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+--
 -- AUTO_INCREMENT for table `files`
 --
 ALTER TABLE `files`
@@ -204,7 +149,7 @@ MODIFY `id` int(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=6;
 -- AUTO_INCREMENT for table `paragraph`
 --
 ALTER TABLE `paragraph`
-MODIFY `id` int(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=40;
+MODIFY `id` int(11) NOT NULL AUTO_INCREMENT,AUTO_INCREMENT=41;
 --
 -- AUTO_INCREMENT for table `projects`
 --

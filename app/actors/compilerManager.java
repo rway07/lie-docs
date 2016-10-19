@@ -1,13 +1,8 @@
 package actors;
 
 import akka.actor.*;
-import akka.cluster.routing.ClusterRouterPool;
-import akka.cluster.routing.ClusterRouterPoolSettings;
 import akka.dispatch.OnComplete;
-import akka.remote.routing.RemoteRouterConfig;
-import akka.routing.BalancingPool;
 import akka.routing.FromConfig;
-import akka.routing.RoundRobinPool;
 import akka.util.Timeout;
 import messages.compileMessage;
 import messages.updateCompile;
@@ -22,14 +17,11 @@ import java.util.concurrent.TimeUnit;
 public class compilerManager extends UntypedActor{
 
     private ActorRef workerRouter = null;
+    private ActorRef db = null;
+    
 
     public compilerManager()
     {
-        Address[] addresses = {
-                AddressFromURIString.parse("akka.tcp://application@127.0.0.1:2551"),
-                AddressFromURIString.parse("akka.tcp://application@127.0.0.1:2552"),
-        };
-
         ActorSelection sel = getContext().system().actorSelection("akka://application/user/workerRouter");
         Future<ActorRef> future = sel.resolveOne(new Timeout(5, TimeUnit.SECONDS));
 
