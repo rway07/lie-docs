@@ -32,35 +32,35 @@ public class dbActor extends UntypedActor {
         switch((String)m.get("action")){
             case "addChar": {
                 Logger.debug("STEA: char = " + m.get("chr").toString());
-                db.addChar((int)(long) m.get("r"),(int)(long) m.get("c"),(String)m.get("chr"));
+                db.addChar((String)m.get("file"),(int)(long) m.get("r"),(int)(long) m.get("c"),(String)m.get("chr"));
                 break;
             }
             case "removeChar":{
-                db.removeChar((int)(long) m.get("r"),(int)(long) m.get("c"));
+                db.removeChar((String)m.get("file"),(int)(long) m.get("r"),(int)(long) m.get("c"));
                 break;
             }
             case "removeRowBackspace":{
-                db.removeRowBackspace((int)(long) m.get("r"),(int)(long) m.get("c"));
+                db.removeRowBackspace((String)m.get("file"),(int)(long) m.get("r"),(int)(long) m.get("c"));
                 break;
             }
             case "removeRowCanc":{
-                db.removeRowCanc((int)(long) m.get("r"),(int)(long) m.get("c"));
+                db.removeRowCanc((String)m.get("file"),(int)(long) m.get("r"),(int)(long) m.get("c"));
                 break;
             }
             case "addRowMoveText":{
                Logger.info("dentro");
-               db.addRowMoveText((int)(long) m.get("r"),(int)(long) m.get("c"));
+               db.addRowMoveText((String)m.get("file"),(int)(long) m.get("r"),(int)(long) m.get("c"));
                break;
             }
             case "addRowNoMoveText":{
-                db.addRowNoMoveText((int)(long) m.get("r"));
+                db.addRowNoMoveText((String)m.get("file"),(int)(long) m.get("r"));
                 break;
             }
             case "init":{
                 if(!initialized)
                 {
                     initialized = true;
-                    db = new editorModel((String)m.get("project"),(String)m.get("file"));
+                    db = new editorModel((String)m.get("project"));
                 }
                 resp.put("action","init");
                 resp.put("ack","");
@@ -70,7 +70,7 @@ public class dbActor extends UntypedActor {
 
                 Logger.info("sono actorDB ricevo OPEN");
                 int id = 0;
-                ArrayList  rows = db.getRows();
+                ArrayList  rows = db.getRows((String)m.get("file"));
                 if(rows.size() > 0){
                     Iterator irow = rows.iterator();
                     resp.put("fn","open");
@@ -78,7 +78,7 @@ public class dbActor extends UntypedActor {
                     {
                         HashMap row = (HashMap) irow.next();
                         id = (int)row.get("id");
-                        ArrayList rowChars = db.getChars(id);
+                        ArrayList rowChars = db.getChars((String)m.get("file"),id);
                         Iterator ichar = rowChars.iterator();
                         String str = "";
                         while(ichar.hasNext())
@@ -94,7 +94,7 @@ public class dbActor extends UntypedActor {
                     }
                 }else{
                     //file vuoto oppure nuovo
-                    db.addRowNoMoveText(0);
+                    db.addRowNoMoveText((String)m.get("file"),0);
                     jsonUtil jrow = new jsonUtil("");
                     jrow.put("idx","0");
                     jrow.put("str","");

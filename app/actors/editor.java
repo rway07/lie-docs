@@ -196,6 +196,7 @@ public class editor extends UntypedActor {
                                 //build command for actorDB
                             jsonUtil openCmd = new jsonUtil("");
                             openCmd.put("action","open");
+                            openCmd.put("file",file);
                             f = ask(db,(Object)openCmd.toString(),1000);
                             f.onSuccess(new OnSuccess<String>(){
                                 public void onSuccess(String result) {
@@ -211,6 +212,8 @@ public class editor extends UntypedActor {
                                 break;
                             }
                             default: {
+
+                                jsonMsg.put("file",file);
                                 f = ask(db,(Object)jsonMsg.toString(),1000);
                                 f.onSuccess(new OnSuccess() {
                                     @Override
