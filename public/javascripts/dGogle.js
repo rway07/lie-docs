@@ -443,9 +443,6 @@ function compila()
 
 $(document).ready(function(){
 
-
-
-
   $("#editorColor").css("background-color",window.editorColor);
   $("#page").documentize(stream.send);
 

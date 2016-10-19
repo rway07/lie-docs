@@ -6,6 +6,7 @@ import akka.cluster.routing.ClusterRouterPoolSettings;
 import akka.dispatch.OnComplete;
 import akka.remote.routing.RemoteRouterConfig;
 import akka.routing.BalancingPool;
+import akka.routing.FromConfig;
 import akka.routing.RoundRobinPool;
 import akka.util.Timeout;
 import messages.compileMessage;
@@ -37,11 +38,7 @@ public class compilerManager extends UntypedActor{
             public void onComplete(Throwable excp, ActorRef child) throws Throwable {
                 if (excp != null) {
                     Logger.info("routerWorker non esisteto, lo creo");
-                    workerRouter = getContext().system().actorOf(new ClusterRouterPool(new BalancingPool(0),
-                            new ClusterRouterPoolSettings(10,5,true,"compiler")).props(
-                            Props.create(compilerWorker.class)),"workerRouter");
-
-                    Logger.debug("*****" + workerRouter.path().toString());
+                    workerRouter = getContext().system().actorOf(Props.create(compilerWorker.class).withRouter(new FromConfig()),"workerRouter");
                 } else {
                     workerRouter = child;
                 }
