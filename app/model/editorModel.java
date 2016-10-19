@@ -109,6 +109,7 @@ public class editorModel {
 
     public void addChar(String file,int row, int col, String chr)
     {
+        Logger.info("addo char");
         HashMap r = this.getRow(file,row);
         int paragraphID = (int)r.get("id");
         double col_idx = -1;
@@ -157,7 +158,7 @@ public class editorModel {
 
         int paragraphID = (int)this.getRow(file,row).get("id");
         Logger.error("cerco idx per char: " + col + " al paragrafoID : " + paragraphID);
-        ArrayList chars = getChars(file,paragraphID);
+        ArrayList chars = getChars(paragraphID);
 
         Logger.error("trovati chars: " + chars.size());
         return (HashMap)chars.get(col);
@@ -167,10 +168,10 @@ public class editorModel {
     public long countChars(String file,int row)
     {
         int paragraphID = (int)this.getRow(file,row).get("id");
-        return (long)((ArrayList)getChars(file,paragraphID)).size();
+        return (long)((ArrayList)getChars(paragraphID)).size();
     }
 
-    public ArrayList getChars(String file,int paragraphID){
+    public ArrayList getChars(int paragraphID){
 
         return (ArrayList) dbUtil.query("select * from `character` where paragraph = " + paragraphID + " order by idx asc");
     }
@@ -180,7 +181,8 @@ public class editorModel {
     }
 
     public ArrayList getRows(String file) {
-        return (ArrayList) dbUtil.query("select * from paragraph where file = "+file+" order by idx asc");
+        int fileID = getFileID(file,project);
+        return (ArrayList) dbUtil.query("select * from paragraph where file = "+fileID+" order by idx asc");
     }
 
     private int getFileID(String file,int prj){

@@ -78,7 +78,7 @@ public class dbActor extends UntypedActor {
                     {
                         HashMap row = (HashMap) irow.next();
                         id = (int)row.get("id");
-                        ArrayList rowChars = db.getChars((String)m.get("file"),id);
+                        ArrayList rowChars = db.getChars(id);
                         Iterator ichar = rowChars.iterator();
                         String str = "";
                         while(ichar.hasNext())
