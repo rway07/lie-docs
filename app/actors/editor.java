@@ -8,6 +8,7 @@ import akka.cluster.pubsub.*;
 import akka.util.Timeout;
 import messages.compileMessage;
 import messages.documentChanges;
+import messages.updateCompile;
 import scala.concurrent.Future;
 import static akka.pattern.Patterns.ask;
 
@@ -16,6 +17,7 @@ import utils.*;
 import play.Logger;
 
 
+import java.util.Iterator;
 import java.util.concurrent.TimeUnit;
 
 public class editor extends UntypedActor {
@@ -42,33 +44,21 @@ public class editor extends UntypedActor {
 
 
     public editor(ActorRef out) {
+
         this.router =  DistributedPubSub.get(system).mediator();
         this.socket = out;
-
-        ActorSelection sel = system.actorSelection("akka://application/user/compilerManager");
-        Future<ActorRef> future = sel.resolveOne(new Timeout(5, TimeUnit.SECONDS));
-
-        future.onComplete(new OnComplete<ActorRef>() {
-            @Override
-            public void onComplete(Throwable excp, ActorRef child) throws Throwable {
-                if (excp != null) {
-                    Logger.info("compilerManager non esisteto, lo creo");
-                    compilerManager = system.actorOf(Props.create(compilerManager.class),"compilerManager");
-                    Logger.debug("il manager si chiama: "+compilerManager.path().toString());
-                } else {
-                    compilerManager = child;
-                }
-            }
-        }, system.dispatcher());
 
     }
 
     @Override
     public void onReceive(Object message) {
 
-            if (message instanceof DistributedPubSubMediator.SubscribeAck){
-                Logger.info("conferma subscribe");
-                Logger.error("NEW EDITOR : for room: {}",this.room);
+
+            if( message instanceof updateCompile){
+               Logger.info("EDITOR: ricevuto aggiornamento");
+               Logger.error(((updateCompile) message).getStatus());
+            }
+            else if (message instanceof DistributedPubSubMediator.SubscribeAck){
                 jsonUtil msg = new jsonUtil("");
                 msg.put("fn","join");
                 msg.put("editorID",this.editorID);
@@ -101,7 +91,6 @@ public class editor extends UntypedActor {
                         {
                             if(jsonMsg.get("ack") == null)
                             {
-                                Logger.info("richiesta join da ws");
                                 String project = (String)jsonMsg.get("project");
                                 String file = (String)jsonMsg.get("file");
                                 this.editorColor = (String)jsonMsg.get("editorColor");
@@ -109,26 +98,31 @@ public class editor extends UntypedActor {
                                 this.file = file;
                                 this.room = project + " " + file;
 
-                                ActorSelection sel = system.actorSelection("akka://application/user/"+"DB"+project+file);
+                                ActorSelection sel = system.actorSelection("akka://application/user/"+"DB"+project);
                                 Future<ActorRef> future = sel.resolveOne(new Timeout(5, TimeUnit.SECONDS));
 
                                 future.onComplete(new OnComplete<ActorRef>() {
                                     @Override
                                     public void onComplete(Throwable excp, ActorRef child) throws Throwable {
-                                        // ActorNotFound will be the Throwable if actor not exists
-                                        Logger.info("getto attore e mi sottoscrivo");
-
                                         if (excp != null) {
-                                            Logger.info("attore non esisteto, lo creo");
-                                            db = system.actorOf(dbActor.props(),"DB"+project+file);
-                                            Logger.info(db.path().toString());
-                                            Logger.info("nuovo attore db: " + db.toString());
-
+                                            db = system.actorOf(dbActor.props(),"DB"+project);
                                         } else {
                                             db = child;
-                                            Logger.info("attore trovato: " + db.toString());
-
                                         }
+
+                                        ActorSelection s = system.actorSelection("akka://application/user/compilerManager" + project);
+                                        Future<ActorRef> f = s.resolveOne(new Timeout(5, TimeUnit.SECONDS));
+
+                                        f.onComplete(new OnComplete<ActorRef>() {
+                                            @Override
+                                            public void onComplete(Throwable excp, ActorRef child) throws Throwable {
+                                                if (excp != null) {
+                                                    compilerManager = system.actorOf(Props.create(compilerManager.class,project,db),"compilerManager" + project);
+                                                } else {
+                                                    compilerManager = child;
+                                                }
+                                            }
+                                        }, system.dispatcher());
 
                                         jsonUtil initMsg = new jsonUtil("");
                                         initMsg.put("action","init");
@@ -137,7 +131,6 @@ public class editor extends UntypedActor {
 
                                         db.tell(initMsg.toString(),getSelf());
                                         editorID = (String)jsonMsg.get("editorID");
-                                        Logger.info("mi sottoscrivo alla room");
                                         router.tell(new DistributedPubSubMediator.Subscribe(room, getSelf()), getSelf());
                                     }
                                 }, system.dispatcher());
@@ -148,12 +141,10 @@ public class editor extends UntypedActor {
                             }
                             else if(!this.editorID.equals((String)jsonMsg.get("editorID")))
                             {
-                                Logger.info("mi annuncio come nuovo editor");
                                 jsonUtil join = new jsonUtil("");
                                 join.put("editorID",jsonMsg.get("editorID"));
                                 join.put("editorColor",jsonMsg.get("editorColor"));
                                 join.put("fn","join");
-                                Logger.warn("comunico avvenuto join");
                                 socket.tell(join.toString(),self());
                             }
                             break;
@@ -176,7 +167,6 @@ public class editor extends UntypedActor {
                             msg.put("fn","ping");
                             msg.put("editorID",this.editorID);
                             msg.put("editorColor",this.editorColor);
-                            Logger.info("mi annuncio:  " + msg.toString());
                             router.tell(new DistributedPubSubMediator.Publish(this.room, new documentChanges(msg.toString())),getSelf());
                             break;
 
@@ -198,7 +188,7 @@ public class editor extends UntypedActor {
                         switch ((String) jsonMsg.get("action")) {
                             //editor's view function helper
                             case "compile":{
-                                compilerManager.tell(new compileMessage(),getSelf());
+                                compilerManager.tell(new compileMessage().setSender(getSelf()).setProject(project),getSelf());
                                 break;
                             }
                             case "open": {
@@ -206,6 +196,7 @@ public class editor extends UntypedActor {
                                 //build command for actorDB
                             jsonUtil openCmd = new jsonUtil("");
                             openCmd.put("action","open");
+                            openCmd.put("file",file);
                             f = ask(db,(Object)openCmd.toString(),1000);
                             f.onSuccess(new OnSuccess<String>(){
                                 public void onSuccess(String result) {
@@ -221,6 +212,8 @@ public class editor extends UntypedActor {
                                 break;
                             }
                             default: {
+
+                                jsonMsg.put("file",file);
                                 f = ask(db,(Object)jsonMsg.toString(),1000);
                                 f.onSuccess(new OnSuccess() {
                                     @Override
