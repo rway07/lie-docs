@@ -64,6 +64,6 @@ public class EditorController extends Controller {
         ArrayList<HashMap<String, Object>> list =
                 dbUtil.executeQuery("select id, name from files where project = " + idProject + ";");
 
-        return ok(editor.render("lie-docs prototype", idProject, projectName, fileName, list));
+        return ok(editor.render("lie-docs prototype", idProject, projectName, idFile, fileName, list));
     }
 }

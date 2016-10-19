@@ -20,9 +20,16 @@ function newFile() {
     });
 }
 
+function getLocation(href) {
+    var l = document.createElement("a");
+    l.href = href;
+    return l;
+};
+
 function fileDeleteEventListener() {
     $(document).on("click", ".remove_file", function() {
         var id = $(this).attr("id");
+        var currentFileID = $("#idFile").val();
 
         $.ajax({
             url: "/file/" + id + "/delete",
@@ -33,6 +40,11 @@ function fileDeleteEventListener() {
             },
             success: function() {
                 removeFileEntry(id);
+                if (currentFileID == id) {
+                    // Reload page
+                    var location = getLocation(window.location.href).host;
+                    window.open("http://" + location, "_self");
+                }
             }
         });
     });

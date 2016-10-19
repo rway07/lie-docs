@@ -1,10 +1,11 @@
-@(title: String, projectID:String, projectName:String, fileName:String, filesList:ArrayList[HashMap[String, Object]])
+@(title: String, projectID:String, projectName:String, idFile:String, fileName:String, filesList:ArrayList[HashMap[String, Object]])
 
 @header.common(title, "")
 @header.editor()
     <input id="projectID" type="hidden" value="@projectID">
     <div id="project" _projectName="@projectName" style="display:none;" ></div>
     <div id="file" _fileName="@fileName" style="display:none;"></div>
+    <input type="hidden" id="idFile" value="@idFile"></input>
 
     <!-- TODO il modal per l'aggiunta del file non acquisisce il focus alla textbox correttamente -->
 @modals.new_file()
