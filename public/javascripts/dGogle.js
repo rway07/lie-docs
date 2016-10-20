@@ -684,7 +684,6 @@ $.fn.fn = function(e,notifyChange){
           }
           case 8:
           {
-
             //var currRow = $(window.getSelection().anchorNode).parent().parent();
             if(col > 0)
             {
@@ -761,27 +760,28 @@ $.fn.fn = function(e,notifyChange){
 
 };
 
-$.fn.streamChar = function(e,notifyChange)
+$.fn.streamChar = function(e, notifyChange)
 {
-    console.log("STEA REGNA: " + e.keyCode);
-    if ((e.keyCode >= 32) && (e.keyCode <= 126))
+    console.log("KeyPress: " + e.keyCode);
+    if (((e.keyCode >= 32) && (e.keyCode <= 126)) || ((e.keyCode >= 192) && (e.keyCode <= 242)))
     //if(e.type=="keypress" && e.which !== 0 && !e.ctrlKey && !e.metaKey && !e.altKey)
-      {
+    {
         e.preventDefault();
         var char = String.fromCharCode(e.keyCode);
 
         var paramAddChar = {
-          fn: "execAddChar",
-          r: row,
-          c: col,
-          author:window.editorID,
-          chr: char
+            fn: "execAddChar",
+            r: row,
+            c: col,
+            author:window.editorID,
+            chr: char
         };
         var currRow = $('tr:eq('+parseInt(row)+')');
 
         notifyChange($.fn.indices(currRow,'addChar',paramAddChar,true));
-
-  }
+    } else {
+        e.preventDefault();
+    }
 };
 
 $.fn.indices = function(currTr,action,func,prev,next) {

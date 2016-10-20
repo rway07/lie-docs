@@ -190,9 +190,17 @@ public class editorModel {
         int paragraphID = (int)this.getRow(file,row).get("id");
         Logger.error("cerco idx per char: " + col + " al paragrafoID : " + paragraphID);
         ArrayList chars = getChars(paragraphID);
+        HashMap<String, Object> ret;
+        Logger.debug("PURU: chars.size() = " + chars.size() + " col = " + col);
 
         Logger.error("trovati chars: " + chars.size());
-        return (HashMap)chars.get(col);
+        if (chars.size() == 0) {
+            ret = new HashMap<>();
+            ret.put("idx", 0.0);
+        } else {
+            ret = (HashMap)chars.get(col);
+        }
+        return ret;
     }
 
 
