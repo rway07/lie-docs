@@ -35,9 +35,10 @@ public class editorModel {
     public void removeChar(String file, int row, int col){
         long chars = this.countChars(file, row);
         Logger.debug("PAY ATTENTION: " + chars + " row = " + row + " col = " + col);
-
-        if(col == chars) col--;
-
+        //if(col == chars) col--;
+        if (col != 0) {
+            col--;
+        }
         Logger.debug("PAY ATTENTION: " + chars + " row = " + row + " col = " + col);
         HashMap chr = getChar(file,row,col);
         dbUtil.query("DELETE FROM `character` WHERE paragraph = " + chr.get("paragraph") + " and idx = " + chr.get("idx"));
@@ -62,7 +63,8 @@ public class editorModel {
         Logger.info("chiamo remove row backspace, alla riga: " + row);
 
         int preRowChars = (int)countChars(file,row-1);
-        double base_col_idx = (double)this.getChar(file,row-1,preRowChars-1).get("idx");
+        if (preRowChars != 0) preRowChars -= 1;
+        double base_col_idx = (double)this.getChar(file,row-1,preRowChars).get("idx");
 
         Logger.info("ottengo base_col_idx: " + base_col_idx);
 
