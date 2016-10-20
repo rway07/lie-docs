@@ -1,5 +1,6 @@
 package utils;
 
+import akka.actor.ActorRef;
 import play.Logger;
 
 import java.util.ArrayList;
@@ -16,6 +17,16 @@ public class cProject {
     private HashMap<String,String> sources = null;
     private HashMap<String,String> headers = null;
     private HashMap<String,ArrayList<String>> sourceHeaders = null;
+    private ActorRef sender;
+
+    public ActorRef getSender() {
+        return sender;
+    }
+
+    public cProject setSender(ActorRef sender) {
+        this.sender = sender;
+        return this;
+    }
 
     public cProject(){
         sources = new HashMap<String, String>();

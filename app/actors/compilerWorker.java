@@ -6,6 +6,7 @@ import messages.sourceCompiled;
 import messages.updateCompile;
 import play.Logger;
 import utils.cProject;
+import utils.fileSystem;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -42,26 +43,10 @@ public class compilerWorker extends UntypedActor{
         if(message instanceof cProject) {
             Logger.info(me+"ricevuto qualcosa");
 
-            String tmpDir = System.getProperty("java.io.tmpdir");
+            String tmpDir = fileSystem.getTempDir();
             String workingDir = tmpDir + "/" + getSelf().path().name();
+            File cwd = fileSystem.getWorkingDir(getSelf().path().name());
 
-            File cwd = new File(workingDir);
-            if (!cwd.exists()) {
-
-                cwd.mkdirs();
-                cwd.setExecutable(true, false);
-                cwd.setReadable(true, false);
-                cwd.setWritable(true, false);
-                Logger.info(me+"creo working dir");
-
-            } else {
-                Logger.info(me+"pulisco working dir");
-                for (File child : cwd.listFiles())
-                {
-                    Logger.info(me+"elimino " + child.getName());
-                    child.delete();
-                }
-            }
 
             //printing soucers
             String sourceFileName = "";
@@ -70,27 +55,16 @@ public class compilerWorker extends UntypedActor{
             {
                 sourceFileName = sources.next();
                 Logger.info(me+"scrivo: " + sourceFileName);
-                PrintWriter f = new PrintWriter(workingDir + "/" + sourceFileName,"UTF-8");
-                f.write(((cProject) message).getSource(sourceFileName));
-                f.close();
-                File file = new File(workingDir + "/" + sourceFileName);
-                file.setReadable(true,false);
-                file.setExecutable(true,false);
+                fileSystem.writeText(workingDir + "/" + sourceFileName,((cProject) message).getSource(sourceFileName));
             }
 
             //printing headers
             sources = ((cProject) message).getHeaders();
             while (sources.hasNext())
             {
-
                 String fileName = sources.next();
                 Logger.info(me+"scrivo: " + fileName);
-                PrintWriter f = new PrintWriter(workingDir + "/" + fileName,"UTF-8");
-                f.write(((cProject) message).getHeader(fileName));
-                f.close();
-                File file = new File(workingDir + "/" + fileName);
-                file.setReadable(true,false);
-                file.setExecutable(true,false);
+                fileSystem.writeText(workingDir + "/" + fileName,((cProject) message).getHeader(fileName));
             }
 
             Runtime rt = Runtime.getRuntime();
@@ -109,18 +83,28 @@ public class compilerWorker extends UntypedActor{
                     errors = true;
                     Logger.info("WORKER: invio aggiornamento");
                     s = stdError.readLine();
-                    getSender().tell(new updateCompile().setStatus(s).setSender(((compileMessage) message).getSender()),getSelf());
+                    getSender().tell(new updateCompile().setStatus(s).setSender(((cProject) message).getSender()),getSelf());
                 }
             }
 
-            if(!errors)
-                getSender().tell(new updateCompile().setStatus("Compilation successfull!").setSender(((compileMessage) message).getSender()),getSelf());
+            if(!errors){
+                getSender().tell(new updateCompile().setStatus("Compilation successfull!").setSender(((cProject) message).getSender()),getSelf());
 
-            Path objFile = Paths.get(workingDir+"/"+sourceFileName.substring(0,sourceFileName.length()-2) + ".o");
-            byte[] data = Files.readAllBytes(objFile);
+                byte[] data = fileSystem.readBinary(workingDir+"/"+sourceFileName.substring(0,sourceFileName.length()-2) + ".o");
 
-            getSender().tell(new sourceCompiled().setBinData(data).setObjName(sourceFileName.substring(0,sourceFileName.length()-2) + ".o"),getSelf());
-
+                getSender().tell(new sourceCompiled()
+                           .setWorkerName(getSelf().path().name())
+                           .setSender(((cProject) message).getSender())
+                           .setCompilationFailed(false).setBinData(data)
+                           .setObjName(sourceFileName.substring(0,sourceFileName.length()-2) + ".o"),getSelf());
+            }else{
+                getSender().tell(new sourceCompiled()
+                           .setWorkerName(getSelf().path().name())
+                           .setSender(((cProject) message).getSender())
+                           .setCompilationFailed(true)
+                           .setBinData(null)
+                           .setObjName(sourceFileName.substring(0,sourceFileName.length()-2) + ".o"),getSelf());
+            }
         }
 
         //getSelf().tell("sono un compilatore",getSender());

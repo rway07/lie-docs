@@ -5,12 +5,16 @@ import akka.dispatch.OnComplete;
 import akka.routing.FromConfig;
 import akka.util.Timeout;
 import messages.compileMessage;
+import messages.sourceCompiled;
 import messages.updateCompile;
 import play.Logger;
 import scala.concurrent.Future;
 import utils.cProject;
+import utils.fileSystem;
+
 import static akka.pattern.Patterns.ask;
 
+import java.io.File;
 import java.util.Iterator;
 import java.util.concurrent.TimeUnit;
 
@@ -21,6 +25,10 @@ public class compilerManager extends UntypedActor{
 
     private ActorRef workerRouter = null;
     private ActorRef db = null;
+    private int missingCompiled = 0;
+    private boolean someFail = false;
+    private File cwd = null;
+    private String workingDir = "";
 
 
     //manager: 1- ottiene tutti i c del progetto
@@ -31,6 +39,8 @@ public class compilerManager extends UntypedActor{
 
     public compilerManager(String project, ActorRef db) {
         this.db = db;
+
+        this.workingDir = fileSystem.getTempDir() + "/" + getSelf().path().name();
 
         ActorSelection sel = getContext().system().actorSelection("akka://application/user/workerRouter");
         Future<ActorRef> future = sel.resolveOne(new Timeout(5, TimeUnit.SECONDS));
@@ -58,11 +68,30 @@ public class compilerManager extends UntypedActor{
             cProject project = (cProject)((compileMessage) message).getCProject();
             //ottengo tutto cio che devo compilare
             Iterator<String> sources = project.getSources();
+            someFail = false;
+            cwd = fileSystem.getWorkingDir(getSelf().path().name());
+
             while(sources.hasNext())
             {
-                cProject f = project.getSourceHeaders(sources.next());
+                missingCompiled++;
+                cProject f = project.getSourceHeaders(sources.next()).setSender(((compileMessage) message).getSender());
                 workerRouter.tell(f,getSelf());
             }
+        }
+        else if(message instanceof sourceCompiled){
+            someFail |= ((sourceCompiled) message).isCompilationFailed();
+            missingCompiled--;
+
+            if(!((sourceCompiled) message).isCompilationFailed()) {
+                fileSystem.writeBinary(workingDir+"/"+((sourceCompiled) message).getObjName(),((sourceCompiled) message).getBinData());
+                ((sourceCompiled)message).getSender().tell(new updateCompile()
+                                                     .setStatus("Got compiled object " + ((sourceCompiled) message).getObjName() + " from " + ((sourceCompiled) message).getWorkerName()),getSelf());
+            }
+
+            if(missingCompiled == 0 && !someFail) {
+                 Logger.info("QUI INVOCO GCC");
+            }
+
         }
         else if(message instanceof compileMessage)
         {
