@@ -23,6 +23,38 @@ public class editorModel {
         this.setProject(project);
     }
 
+    public ArrayList<HashMap<String, Object>> getSources(){
+        ArrayList<HashMap<String, Object>> sources = (ArrayList<HashMap<String,Object>>) dbUtil.query("select name, id from files where project = " + project + " and name like '%.c' ");
+        return sources;
+    }
+
+    public String getSource(String sourceFile)
+    {
+        String file = "";
+        ArrayList rows = getRows(sourceFile);
+
+        Iterator irows = rows.iterator();
+
+        while(irows.hasNext())
+        {
+            HashMap row = (HashMap)irows.next();
+            ArrayList chars =  getChars((int)row.get("id"));
+            Iterator ichars = chars.iterator();
+
+            while(ichars.hasNext())
+            {
+                HashMap chr = (HashMap) ichars.next();
+                file+= chr.get("value");
+            }
+        }
+
+        Logger.info("------------------ \n + " + file);
+
+        return file;
+
+
+    }
+
     public void setProject(String prj){
         project = this.getProjectID(prj);
     }

@@ -23,6 +23,14 @@ public class dbActor extends UntypedActor {
     private boolean initialized = false;
     private editorModel db = null;
 
+    public ArrayList<HashMap<String, Object>> getSources(){
+        return db.getSources();
+    }
+
+    public String getSource(String sourceFile){
+        return db.getSource(sourceFile);
+    }
+
     @Override
     public void onReceive(Object msg) {
 
