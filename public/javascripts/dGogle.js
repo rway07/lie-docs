@@ -437,6 +437,7 @@ $(document).ready(function(){
         },
 
         registerCallback: function(func){ws.onmessage = func}
+
     };
 
     ws.onopen = function(){
@@ -451,6 +452,14 @@ $(document).ready(function(){
 
   $("#editorColor").css("background-color",window.editorColor);
   $("#page").documentize(stream.send);
+
+    $('#collapse1').on('shown.bs.collapse', function () {
+        $(".glyphicon").removeClass("glyphicon-collapse-down").addClass("glyphicon-collapse-up");
+    });
+
+    $('#collapse1').on('hidden.bs.collapse', function () {
+        $(".glyphicon").removeClass("glyphicon-collapse-up").addClass("glyphicon-collapse-down");
+    });
 
   stream.registerCallback(exec);
 
