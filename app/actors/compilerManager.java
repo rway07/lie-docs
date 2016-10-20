@@ -9,9 +9,8 @@ import messages.updateCompile;
 import play.Logger;
 import scala.concurrent.Future;
 import utils.cProject;
+import static akka.pattern.Patterns.ask;
 
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.concurrent.TimeUnit;
 
@@ -53,35 +52,22 @@ public class compilerManager extends UntypedActor{
     @Override
     public void onReceive(Object message) throws Throwable {
 
-        if(message instanceof compileMessage)
+        if(message instanceof compileMessage && ((compileMessage) message).projectCreated)
         {
-
-            
-
-            cProject prova = new cProject();
-
-            // get c dal db
-            prova.addSource("enrico.c","#include <stdio.h>\n #include\"puru.h\"\n #include \"indrit.h\"\n #include \"enrico.h\" void main(int c){return}");
-            prova.addSource("puru.c","#include \"puru.h\"\n void somma(){}");
-
-            //carico tutti gli h necessari
-            Iterator<String> reqHeaders = prova.getHeaders();
-            while(reqHeaders.hasNext())
-            {
-                String header = reqHeaders.next();
-                prova.addHeaderContent(header,"contenuto");
-            }
-
+            Logger.info("MANAGER: RICEVUTO SOURCE PROGETTO");
+            cProject project = (cProject)((compileMessage) message).getCProject();
             //ottengo tutto cio che devo compilare
-            Iterator<String> sources = prova.getSources();
+            Iterator<String> sources = project.getSources();
             while(sources.hasNext())
             {
-                cProject f = prova.getSourceHeaders(sources.next());
-                Logger.debug(f.toString());
+                cProject f = project.getSourceHeaders(sources.next());
+                workerRouter.tell(f,getSelf());
             }
-
-
-            workerRouter.tell(message,getSelf());
+        }
+        else if(message instanceof compileMessage)
+        {
+            Logger.info("MANAGER: ricevuta richiesa di compilazione per " + ((compileMessage) message).getProject());
+            db.tell(message,getSelf());
         }else if( message instanceof updateCompile)
         {
             Logger.info("MANAGER: forwardo aggiornamento");

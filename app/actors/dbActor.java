@@ -1,9 +1,10 @@
 package actors;
 
-import akka.actor.ActorRef;
 import akka.actor.Props;
 import akka.actor.UntypedActor;
+import messages.compileMessage;
 import play.Logger;
+import utils.cProject;
 import utils.jsonUtil;
 import model.*;
 
@@ -23,16 +24,42 @@ public class dbActor extends UntypedActor {
     private boolean initialized = false;
     private editorModel db = null;
 
-    public ArrayList<HashMap<String, Object>> getSources(){
-        return db.getSources();
-    }
-
-    public String getSource(String sourceFile){
-        return db.getSource(sourceFile);
-    }
 
     @Override
     public void onReceive(Object msg) {
+
+        if(msg instanceof compileMessage)
+        {
+            Logger.info("DB ACTOR: RICEVUTA RICHIESTA DI CREAZIONE PROGETTO");
+            cProject p = new cProject();
+            p = new cProject();
+
+            //getting source files from db
+            Iterator sources = db.getSources();
+            Logger.info("DB ACTOR: - ottengo sources");
+            while(sources.hasNext())
+            {
+                String srcName = (String)((HashMap)sources.next()).get("name");
+                p.addSource(srcName,db.getSource(srcName));
+            }
+            Logger.info("DB ACTOR: - ottengo headers");
+            //carico tutti gli h necessari
+            Iterator<String> reqHeaders = p.getHeaders();
+            while(reqHeaders.hasNext())
+            {
+                String header = reqHeaders.next();
+                p.addHeaderContent(header,db.getSource(header));
+            }
+
+            Logger.info("DB ACTOR: - set created = true");
+            ((compileMessage) msg).projectCreated = true;
+            ((compileMessage) msg).setCProject(p);
+            Logger.info("DB ACTOR: - send response to manager");
+            getSender().tell(msg,getSelf());
+
+            Logger.info("DB ACTOR: - progetto creato");
+            return;
+        }
 
         jsonUtil m = new jsonUtil((String)msg);
         jsonUtil resp = new jsonUtil("");

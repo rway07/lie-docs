@@ -23,9 +23,9 @@ public class editorModel {
         this.setProject(project);
     }
 
-    public ArrayList<HashMap<String, Object>> getSources(){
+    public Iterator<HashMap<String, Object>> getSources(){
         ArrayList<HashMap<String, Object>> sources = (ArrayList<HashMap<String,Object>>) dbUtil.query("select name, id from files where project = " + project + " and name like '%.c' ");
-        return sources;
+        return sources.iterator();
     }
 
     public String getSource(String sourceFile)
@@ -46,12 +46,11 @@ public class editorModel {
                 HashMap chr = (HashMap) ichars.next();
                 file+= chr.get("value");
             }
+
+            file+="\n";
         }
 
-        Logger.info("------------------ \n + " + file);
-
         return file;
-
 
     }
 

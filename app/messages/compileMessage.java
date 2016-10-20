@@ -2,6 +2,7 @@ package messages;
 
 import akka.actor.ActorRef;
 import scala.Serializable;
+import utils.cProject;
 
 /**
  * Created by enrico on 18/10/16.
@@ -9,6 +10,17 @@ import scala.Serializable;
 public class compileMessage implements Serializable{
 
     private ActorRef sender;
+    private cProject prjSource=null;
+    private String project;
+
+    public compileMessage(){
+        prjSource = new cProject();
+    }
+
+    public boolean projectCreated = false;
+
+    public cProject getCProject(){return prjSource;}
+    public void setCProject(cProject p){prjSource = p;}
 
     public String getProject() {
         return project;
@@ -18,8 +30,6 @@ public class compileMessage implements Serializable{
         this.project = project;
         return this;
     }
-
-    private String project;
 
     public ActorRef getSender() {
         return sender;

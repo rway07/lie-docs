@@ -23,6 +23,12 @@ public class cProject {
         sourceHeaders = new HashMap<String,ArrayList<String>>();
     }
 
+
+    public String getSource(String name){ return sources.get(name);}
+    public String getHeader(String name){ return headers.get(name);}
+
+
+
     public void addSource(String name, String content)
     {
         ArrayList<String> headersForSource = new ArrayList<String>();
@@ -52,7 +58,7 @@ public class cProject {
 
     public String toString()
     {
-        String ret = "";
+        String ret = "\n\n";
         ret += "************* -- " + (sources.keySet().toArray())[0] + "-- **********************\n";
         ret += sources.get((sources.keySet().toArray())[0]) + "\n";
         ret += "************* HEADERS ***************\n";
