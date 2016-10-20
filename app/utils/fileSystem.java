@@ -2,9 +2,7 @@ package utils;
 
 import play.Logger;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.PrintWriter;
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -54,25 +52,44 @@ public class fileSystem {
     }
 
     public static void writeBinary(String path,byte[] data){
-
         try{
-
-            FileOutputStream f = new FileOutputStream(new File(path));
-            for (int i = 0; i <= data.length; ++i)
-                f.write(i);
-            f.close();
+                OutputStream output = null;
+                try {
+                    output = new BufferedOutputStream(new FileOutputStream(path));
+                    output.write(data);
+                }
+                finally {
+                    output.close();
+                }
 
         }catch(Exception e){Logger.info(e.getMessage());}
 
     }
 
-    public static byte[] readBinary(String path){
-        try{
-            Path objFile = Paths.get(path);
-            return Files.readAllBytes(objFile);
-        } catch (Exception e ){Logger.error(e.getMessage());}
+    public static byte[] readBinary(String path) {
+        File file = new File(path);
+        byte[] result = new byte[(int) file.length()];
+        try {
+            InputStream input = null;
+            try {
+                int totalBytesRead = 0;
+                input = new BufferedInputStream(new FileInputStream(file));
+                while (totalBytesRead < result.length) {
+                    int bytesRemaining = result.length - totalBytesRead;
+                    //input.read() returns -1, 0, or more :
+                    int bytesRead = input.read(result, totalBytesRead, bytesRemaining);
+                    if (bytesRead > 0) {
+                        totalBytesRead = totalBytesRead + bytesRead;
+                    }
+                }
+            } finally {
+                input.close();
+            }
+            return result;
+        } catch (Exception e) {
+            Logger.error(e.getMessage());
+        }
+
         return null;
     }
-
-
 }

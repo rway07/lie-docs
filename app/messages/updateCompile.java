@@ -9,6 +9,17 @@ public class updateCompile {
     private String status;
     private ActorRef sender;
 
+    public String getSenderName() {
+        return senderName;
+    }
+
+    public updateCompile setSenderName(String senderName) {
+        this.senderName = senderName;
+        return this;
+    }
+
+    private String senderName;
+
     public ActorRef getSender() {
         return sender;
     }

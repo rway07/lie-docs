@@ -25,10 +25,7 @@ import java.util.Map;
  */
 public class compilerWorker extends UntypedActor{
 
-    private final String me = "WORKER (" + getSelf().path().name() + "): ";
-    public compilerWorker(){
-            Logger.debug("SONO NATO");
-    }
+    private final String me = "WORKER (" + getSelf().path().name() + ")";
     private boolean errors = false;
 
     @Override
@@ -41,11 +38,9 @@ public class compilerWorker extends UntypedActor{
         // gcc -o prog_name *.o
 
         if(message instanceof cProject) {
-            Logger.info(me+"ricevuto qualcosa");
-
             String tmpDir = fileSystem.getTempDir();
-            String workingDir = tmpDir + "/" + getSelf().path().name();
-            File cwd = fileSystem.getWorkingDir(getSelf().path().name());
+            String workingDir = tmpDir + "/"+ getSelf().path().name() + "/" + ((cProject) message).getProjectName();
+            File cwd = fileSystem.getWorkingDir(getSelf().path().name() + "/" + ((cProject) message).getProjectName());
 
 
             //printing soucers
@@ -54,7 +49,6 @@ public class compilerWorker extends UntypedActor{
             while (sources.hasNext())
             {
                 sourceFileName = sources.next();
-                Logger.info(me+"scrivo: " + sourceFileName);
                 fileSystem.writeText(workingDir + "/" + sourceFileName,((cProject) message).getSource(sourceFileName));
             }
 
@@ -63,9 +57,12 @@ public class compilerWorker extends UntypedActor{
             while (sources.hasNext())
             {
                 String fileName = sources.next();
-                Logger.info(me+"scrivo: " + fileName);
                 fileSystem.writeText(workingDir + "/" + fileName,((cProject) message).getHeader(fileName));
             }
+
+            getSender().tell(new updateCompile()
+                    .setStatus("Compiling... " + sourceFileName)
+                    .setSender(((cProject) message).getSender()).setSenderName(me),getSelf());
 
             Runtime rt = Runtime.getRuntime();
             Process proc = rt.exec("gcc -c " + workingDir+"/"+sourceFileName + " -o " + workingDir+"/"+sourceFileName.substring(0,sourceFileName.length()-2) + ".o",null,cwd);
@@ -73,7 +70,6 @@ public class compilerWorker extends UntypedActor{
             BufferedReader stdError = new BufferedReader(new InputStreamReader(proc.getErrorStream()));
 
             // read the output from the command
-            Logger.info("Inizio lettura da stdInput");
             String s = null;
 
             while (proc.isAlive()) {
@@ -81,21 +77,27 @@ public class compilerWorker extends UntypedActor{
                 if(stdError.ready())
                 {
                     errors = true;
-                    Logger.info("WORKER: invio aggiornamento");
                     s = stdError.readLine();
-                    getSender().tell(new updateCompile().setStatus(s).setSender(((cProject) message).getSender()),getSelf());
+                    getSender().tell(new updateCompile()
+                                     .setStatus(s)
+                                     .setSender(((cProject) message).getSender())
+                                     .setSenderName(me),getSelf());
                 }
             }
 
             if(!errors){
-                getSender().tell(new updateCompile().setStatus("Compilation successfull!").setSender(((cProject) message).getSender()),getSelf());
+                getSender().tell(new updateCompile()
+                                     .setStatus("Compilation successfull!")
+                                     .setSender(((cProject) message).getSender()).setSenderName(me),getSelf());
 
                 byte[] data = fileSystem.readBinary(workingDir+"/"+sourceFileName.substring(0,sourceFileName.length()-2) + ".o");
 
                 getSender().tell(new sourceCompiled()
                            .setWorkerName(getSelf().path().name())
                            .setSender(((cProject) message).getSender())
-                           .setCompilationFailed(false).setBinData(data)
+                           .setCompilationFailed(false)
+                           .setBinData(data)
+                           .setProjectName(((cProject) message).getProjectName())
                            .setObjName(sourceFileName.substring(0,sourceFileName.length()-2) + ".o"),getSelf());
             }else{
                 getSender().tell(new sourceCompiled()
@@ -103,6 +105,7 @@ public class compilerWorker extends UntypedActor{
                            .setSender(((cProject) message).getSender())
                            .setCompilationFailed(true)
                            .setBinData(null)
+                           .setProjectName(((cProject) message).getProjectName())
                            .setObjName(sourceFileName.substring(0,sourceFileName.length()-2) + ".o"),getSelf());
             }
         }

@@ -19,6 +19,18 @@ public class cProject {
     private HashMap<String,ArrayList<String>> sourceHeaders = null;
     private ActorRef sender;
 
+    public String getProjectName() {
+        return projectName;
+    }
+
+    public cProject setProjectName(String projectName) {
+        this.projectName = projectName;
+        return this;
+    }
+
+    private String projectName = "";
+
+
     public ActorRef getSender() {
         return sender;
     }

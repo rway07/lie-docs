@@ -30,19 +30,16 @@ public class dbActor extends UntypedActor {
 
         if(msg instanceof compileMessage)
         {
-            Logger.info("DB ACTOR: RICEVUTA RICHIESTA DI CREAZIONE PROGETTO");
             cProject p = new cProject();
             p = new cProject();
 
             //getting source files from db
             Iterator sources = db.getSources();
-            Logger.info("DB ACTOR: - ottengo sources");
             while(sources.hasNext())
             {
                 String srcName = (String)((HashMap)sources.next()).get("name");
                 p.addSource(srcName,db.getSource(srcName));
             }
-            Logger.info("DB ACTOR: - ottengo headers");
             //carico tutti gli h necessari
             Iterator<String> reqHeaders = p.getHeaders();
             while(reqHeaders.hasNext())
@@ -51,13 +48,10 @@ public class dbActor extends UntypedActor {
                 p.addHeaderContent(header,db.getSource(header));
             }
 
-            Logger.info("DB ACTOR: - set created = true");
             ((compileMessage) msg).projectCreated = true;
             ((compileMessage) msg).setCProject(p);
-            Logger.info("DB ACTOR: - send response to manager");
             getSender().tell(msg,getSelf());
 
-            Logger.info("DB ACTOR: - progetto creato");
             return;
         }
 
@@ -66,7 +60,6 @@ public class dbActor extends UntypedActor {
 
         switch((String)m.get("action")){
             case "addChar": {
-                Logger.debug("STEA: char = " + m.get("chr").toString());
                 db.addChar((String)m.get("file"),(int)(long) m.get("r"),(int)(long) m.get("c"),(String)m.get("chr"));
                 break;
             }
@@ -83,7 +76,6 @@ public class dbActor extends UntypedActor {
                 break;
             }
             case "addRowMoveText":{
-               Logger.info("dentro");
                db.addRowMoveText((String)m.get("file"),(int)(long) m.get("r"),(int)(long) m.get("c"));
                break;
             }
@@ -102,8 +94,6 @@ public class dbActor extends UntypedActor {
                 break;
             }
             case "open":{
-
-                Logger.info("sono actorDB ricevo OPEN");
                 int id = 0;
                 ArrayList  rows = db.getRows((String)m.get("file"));
                 if(rows.size() > 0){

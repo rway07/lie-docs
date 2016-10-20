@@ -55,8 +55,8 @@ public class editor extends UntypedActor {
 
 
             if( message instanceof updateCompile){
-               Logger.info("EDITOR: ricevuto aggiornamento");
-               Logger.error(((updateCompile) message).getStatus());
+
+               Logger.error(((updateCompile) message).getSenderName()+":"+((updateCompile) message).getStatus());
             }
             else if (message instanceof DistributedPubSubMediator.SubscribeAck){
                 jsonUtil msg = new jsonUtil("");

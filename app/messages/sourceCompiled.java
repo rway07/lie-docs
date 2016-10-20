@@ -11,6 +11,16 @@ public class sourceCompiled {
     private String objName = "";
     private boolean compilationFailed = false;
     private ActorRef sender;
+    private String projectName;
+
+    public String getProjectName() {
+        return projectName;
+    }
+
+    public sourceCompiled setProjectName(String projectName) {
+        this.projectName = projectName;
+        return this;
+    }
 
     public String getWorkerName() {
         return workerName;
