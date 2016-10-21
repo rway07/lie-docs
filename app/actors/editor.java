@@ -53,10 +53,8 @@ public class editor extends UntypedActor {
     @Override
     public void onReceive(Object message) {
 
-
             if( message instanceof updateCompile){
-
-               Logger.error(((updateCompile) message).getSenderName()+":"+((updateCompile) message).getStatus());
+               socket.tell(((updateCompile) message).toString(),getSelf());
             }
             else if (message instanceof DistributedPubSubMediator.SubscribeAck){
                 jsonUtil msg = new jsonUtil("");

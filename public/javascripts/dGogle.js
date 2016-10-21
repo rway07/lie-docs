@@ -405,12 +405,37 @@ function init(){
      }
  };
 
+ window.viewFn['console'] = function(param){
 
+
+     var elem = $(document.createElement("p"));
+     var color;
+     switch(param.msgType){
+         case "Info": color = "blue"; break;
+         case "Progress": color="black"; break;
+         case "Success": color="green"; break;
+         case "Error":color="red"; break;
+     }
+     $(elem).css("color",color).text(param.sender + ":" + param.status);
+
+     if(param.msgType == "Progress" || (param.msgType == "Success" && param.sender=="MANAGER"))
+     {
+         var val = parseInt((parseInt(param.currentStep) / parseInt(param.totalSteps))*100);
+         console.log(val);
+         $("#progressBar").attr("aria-valuenow",val);
+     }
+
+
+     $("#console").append(elem).fadeIn(1000);
+ }
 
 };
 
 function compila()
 {
+    $("#collapse1").collapse('show');
+    $("#progressBar").attr("aria-valuenow","0");
+    $("#console").find("p").each(function(idx,obj){$(obj).remove();});
     stream.send(JSON.stringify({"action":"compile"}));
 }
 

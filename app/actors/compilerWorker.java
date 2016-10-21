@@ -61,8 +61,12 @@ public class compilerWorker extends UntypedActor{
             }
 
             getSender().tell(new updateCompile()
-                    .setStatus("Compiling... " + sourceFileName)
-                    .setSender(((cProject) message).getSender()).setSenderName(me),getSelf());
+                                       .setStatus("Compiling... " + sourceFileName)
+                                       .setSender(((cProject) message).getSender())
+                                       .setSenderName(me)
+                                       .setMsgType(updateCompile.type.Info)
+                                       .setTotalSteps(0)
+                                       .setCurrentStep(0),getSelf());
 
             Runtime rt = Runtime.getRuntime();
             Process proc = rt.exec("gcc -c " + workingDir+"/"+sourceFileName + " -o " + workingDir+"/"+sourceFileName.substring(0,sourceFileName.length()-2) + ".o",null,cwd);
@@ -81,14 +85,21 @@ public class compilerWorker extends UntypedActor{
                     getSender().tell(new updateCompile()
                                      .setStatus(s)
                                      .setSender(((cProject) message).getSender())
-                                     .setSenderName(me),getSelf());
+                                     .setSenderName(me)
+                                     .setMsgType(updateCompile.type.Error)
+                                     .setTotalSteps(0)
+                                     .setCurrentStep(0),getSelf());
                 }
             }
 
             if(!errors){
                 getSender().tell(new updateCompile()
                                      .setStatus("Compilation successfull!")
-                                     .setSender(((cProject) message).getSender()).setSenderName(me),getSelf());
+                                     .setSender(((cProject) message).getSender())
+                                     .setSenderName(me)
+                                     .setMsgType(updateCompile.type.Success)
+                                     .setTotalSteps(0)
+                                     .setCurrentStep(0),getSelf());
 
                 byte[] data = fileSystem.readBinary(workingDir+"/"+sourceFileName.substring(0,sourceFileName.length()-2) + ".o");
 

@@ -12,16 +12,10 @@ import scala.concurrent.Future;
 import utils.cProject;
 import utils.fileSystem;
 
-import static akka.pattern.Patterns.ask;
-
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.InputStreamReader;
-import java.lang.reflect.Array;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Iterator;
-import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -94,6 +88,13 @@ public class compilerManager extends UntypedActor{
                 workerRouter.tell(f,getSelf());
             }
             totaleObject = missingCompiled;
+            ((compileMessage) message).getSender().tell(new updateCompile()
+                                                            .setSenderName(me)
+                                                            .setMsgType(updateCompile.type.Info)
+                                                            .setStatus("Compilation work distribuited among " + totaleObject + " worker")
+                                                            .setTotalSteps(totaleObject+1)
+                                                            .setSender(((compileMessage) message).getSender())
+                                                            .setCurrentStep(0),getSelf());
         }
         else if(message instanceof sourceCompiled){
             someFail |= ((sourceCompiled) message).isCompilationFailed();
@@ -103,7 +104,12 @@ public class compilerManager extends UntypedActor{
             if(!((sourceCompiled) message).isCompilationFailed()) {
                 fileSystem.writeBinary(workingDir+"/"+((sourceCompiled) message).getObjName(),((sourceCompiled) message).getBinData());
                 ((sourceCompiled)message).getSender().tell(new updateCompile()
-                                                     .setStatus("Got compiled object " + ((sourceCompiled) message).getObjName() + " from " + ((sourceCompiled) message).getWorkerName() + " (Objects: "+(-missingCompiled + totaleObject)+"/"+totaleObject+")").setSenderName(me),getSelf());
+                                                     .setStatus("Got compiled object " + ((sourceCompiled) message).getObjName() + " from " + ((sourceCompiled) message).getWorkerName() + " (Objects: "+(-missingCompiled + totaleObject)+"/"+totaleObject+")")
+                                                     .setSenderName(me)
+                                                     .setMsgType(updateCompile.type.Progress)
+                                                     .setTotalSteps(totaleObject+1)
+                                                     .setSender(((sourceCompiled) message).getSender())
+                                                     .setCurrentStep((totaleObject)-missingCompiled),getSelf());
 
                 objs += " "+ workingDir + "/" + (((sourceCompiled) message).getObjName());
             }
@@ -112,7 +118,12 @@ public class compilerManager extends UntypedActor{
 
 
                 ((sourceCompiled)message).getSender().tell(new updateCompile()
-                        .setStatus("Linking...").setSenderName(me),getSelf());
+                                                     .setStatus("Linking...")
+                                                     .setSenderName(me)
+                                                     .setSender(((sourceCompiled) message).getSender())
+                                                     .setMsgType(updateCompile.type.Info)
+                                                     .setTotalSteps(totaleObject+1)
+                                                     .setCurrentStep((totaleObject+1)-missingCompiled),getSelf());
 
 
                 Runtime rt = Runtime.getRuntime();
@@ -130,12 +141,20 @@ public class compilerManager extends UntypedActor{
                         ((sourceCompiled) message).getSender().tell(new updateCompile()
                                                                         .setStatus(s)
                                                                         .setSender(((sourceCompiled) message).getSender())
-                                                                        .setSenderName(me),getSelf());
+                                                                        .setSenderName(me)
+                                                                        .setMsgType(updateCompile.type.Error)
+                                                                        .setTotalSteps(totaleObject+1)
+                                                                        .setCurrentStep(totaleObject+1),getSelf());
                     }
                 }
 
                 ((sourceCompiled)message).getSender().tell(new updateCompile()
-                        .setStatus("Linking Successfull").setSenderName(me),getSelf());
+                                                               .setStatus("Linking Successfull")
+                                                               .setSender(((sourceCompiled) message).getSender())
+                                                               .setSenderName(me)
+                                                               .setMsgType(updateCompile.type.Success)
+                                                               .setTotalSteps(totaleObject+1)
+                                                               .setCurrentStep(totaleObject+1),getSelf());
 
             }
 
