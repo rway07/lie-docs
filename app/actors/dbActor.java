@@ -3,7 +3,10 @@ package actors;
 import akka.actor.Props;
 import akka.actor.UntypedActor;
 import messages.compileMessage;
-import play.Logger;
+import messages.controllerMessage;
+import messages.referendumMessage;
+import messages.updateReferendum;
+import messages.voteReferendum;
 import utils.cProject;
 import utils.jsonUtil;
 import model.*;
@@ -28,7 +31,9 @@ public class dbActor extends UntypedActor {
     @Override
     public void onReceive(Object msg) {
 
-        if(msg instanceof compileMessage)
+        if(msg instanceof controllerMessage || msg instanceof referendumMessage || msg instanceof updateReferendum || msg instanceof voteReferendum)
+        { return ;}
+        else if(msg instanceof compileMessage)
         {
             cProject p = new cProject();
             p = new cProject();

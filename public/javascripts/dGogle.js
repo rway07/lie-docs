@@ -405,10 +405,49 @@ function init(){
      }
  };
 
+ window.viewFn['addFile'] = function(param){
+     $("#filesList")
+         .append('<div id="container-' + param.fileID + '">' +
+             '<li><strong><a href="/project/' + param.projectID + '/' + param.fileID + '">' +
+             param.fileName + ' </a></strong><i id="' + param.fileID + '" onclick="fileDeleteEventListener();"' +
+             'class="remove_file fa fa-trash pull-right" style="cursor:pointer;"></i>' +
+             '</li></div>');
+ }
+
+ window.getLocation = function(href){
+     var l = document.createElement("a");
+     l.href = href;
+     return l;
+ }
+ window.viewFn['referendum'] = function(param){
+
+     console.log("nuovo referendum");
+     $.get(getLocation(window.location.href) + "/modal",function(data){
+         console.log("carico modale");
+         var modal = $.parseHTML(data);
+         $(document).append(modal);
+         console.log("modal appended");
+         $("#emptyModal").modal("show");
+
+         console.log(modal);
+
+     },'html');
+     console.log(param);
+ };
+ window.viewFn['addVoter'] = function(param){
+     console.log("addVoter");
+     console.log(param);
+ };
+
+ window.viewFn['vote'] = function(param){
+     console.log("vote");
+     console.log(param);
+ };
+
  window.viewFn['console'] = function(param){
 
 
-     var elem = $(document.createElement("p"));
+     var elem = $(document.createElement("p")).css("margin","0");
      var color;
      switch(param.msgType){
          case "Info": color = "blue"; break;
@@ -422,7 +461,10 @@ function init(){
      {
          var val = parseInt((parseInt(param.currentStep) / parseInt(param.totalSteps))*100);
          console.log(val);
-         $("#progressBar").attr("aria-valuenow",val);
+
+         $("#progressBar").css("width",val+"%");
+
+
      }
 
 
@@ -434,7 +476,7 @@ function init(){
 function compila()
 {
     $("#collapse1").collapse('show');
-    $("#progressBar").attr("aria-valuenow","0");
+    $("#progressBar").css("width","0%");
     $("#console").find("p").each(function(idx,obj){$(obj).remove();});
     stream.send(JSON.stringify({"action":"compile"}));
 }
@@ -448,7 +490,8 @@ $(document).ready(function(){
         l.href = href;
         return l;
     };
-    
+
+
     ws = new WebSocket('ws://'+getLocation(window.location.href).host+'/ws');
     stream = {
         send: function(msg){ ws.send(msg);},

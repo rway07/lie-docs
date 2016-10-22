@@ -65,25 +65,19 @@ public class editorModel {
 
     public void removeChar(String file, int row, int col){
         long chars = this.countChars(file, row);
-        Logger.debug("PAY ATTENTION: " + chars + " row = " + row + " col = " + col);
         //if(col == chars) col--;
         if (col != 0) {
             col--;
         }
-        Logger.debug("PAY ATTENTION: " + chars + " row = " + row + " col = " + col);
         HashMap chr = getChar(file,row,col);
         dbUtil.query("DELETE FROM `character` WHERE paragraph = " + chr.get("paragraph") + " and idx = " + chr.get("idx"));
     }
 
     public void addRowMoveText(String file, int row,int col){
-        Logger.info("inserisco dopo riga: " + row);
         addRowNoMoveText(file,row);
-        Logger.info("aggiunta riga");
 
         int currRowID = (int)getRow(file, row).get("id");
-        Logger.info("id riga corrente: " + currRowID);
         int newRowID = (int)getRow(file, row+1).get("id");
-        Logger.info("id nuova riga: " + newRowID);
 
         double cidx = (double)getChar(file, row,col).get("idx");
 
@@ -91,29 +85,29 @@ public class editorModel {
     }
 
     public void removeRowBackspace(String file, int row, int col){
-        Logger.info("chiamo remove row backspace, alla riga: " + row);
+
 
         int preRowChars = (int)countChars(file,row-1);
         if (preRowChars != 0) preRowChars -= 1;
         double base_col_idx = (double)this.getChar(file,row-1,preRowChars).get("idx");
 
-        Logger.info("ottengo base_col_idx: " + base_col_idx);
+
 
         int paragraph_id = (int)this.getRow(file,row).get("id");
         int prev_paragraph_id = (int)this.getRow(file,row-1).get("id");
-        Logger.info("sposto rigaID : " + paragraph_id + " alla riga: " + prev_paragraph_id);
+
         dbUtil.query("UPDATE `character` set idx = idx + " + base_col_idx + " , paragraph = " + prev_paragraph_id + " where paragraph = " + paragraph_id);
         dbUtil.query("DELETE from `paragraph` where id = " + paragraph_id);
 
     }
     public void removeRowCanc(String file, int row, int col){
 
-        Logger.info("chiamo remove row canc, alla riga: " + row);
+
         double base_col_idx = (double)this.getChar(file,row,col-1).get("idx");
-        Logger.info("ottengo base_col_idx: " + base_col_idx);
+
         int paragraph_id = (int)this.getRow(file,row).get("id");
         int next_paragraph_id = (int)this.getRow(file,row+1).get("id");
-        Logger.info("sposto rigaID : " + next_paragraph_id + " alla riga: " + paragraph_id);
+
         dbUtil.query("UPDATE `character` set idx = idx + " + base_col_idx + " , paragraph = " + paragraph_id + " where paragraph = " + next_paragraph_id);
         dbUtil.query("DELETE from `paragraph` where id = " + next_paragraph_id);
     }
@@ -121,17 +115,17 @@ public class editorModel {
     public void addRowNoMoveText(String file, int row) {
         double row_idx = -1;
         long rows = this.countRows(file);
-        Logger.info("richiesto inserimento riga dopo: " +  row + " ci sono rows: " +rows );
+
 
 
 
         if(row == 0 && rows == 0)
             row_idx = 0;
         else if(rows == row+1 ) {
-            Logger.info("*****secondo caso");
+
             row_idx = ((double) getRow(file,row).get("idx")) + 1;
         }else{
-            Logger.info("*****terzo caso");
+
             row_idx = (((double)getRow(file,row).get("idx") + (double)getRow(file,row+1).get("idx"))/2);}
 
         dbUtil.query("INSERT INTO `paragraph` (`file`, `idx`) VALUES ("+getFileID(file,project)+","+row_idx+")");
@@ -140,7 +134,7 @@ public class editorModel {
 
     public void addChar(String file,int row, int col, String chr)
     {
-        Logger.info("addo char");
+
         HashMap r = this.getRow(file,row);
         int paragraphID = (int)r.get("id");
         double col_idx = -1;
@@ -151,7 +145,7 @@ public class editorModel {
             }
             default:{
                 long chars = this.countChars(file,row);
-                Logger.info("sono dentro:" + chars + " richista pos: " + col);
+
                 if(col == chars)
                     col_idx = (double)getChar(file,row, (int)chars-1).get("idx") + 1;
                 else
@@ -166,7 +160,7 @@ public class editorModel {
             sql.setInt(1, paragraphID);
             sql.setDouble(2, col_idx);
             sql.setString(3, chr);
-            Logger.debug("STEA: QUERY = " + sql.toString());
+
             sql.executeUpdate();
             sql = conn.prepareStatement("UPDATE `character` c, "+
                     "(SELECT *,@curRank := @curRank + 1 AS rank FROM `character` c, (SELECT @curRank := 0) r where paragraph = ? ORDER BY  idx asc) r " +
@@ -188,12 +182,10 @@ public class editorModel {
     public HashMap getChar(String file,int row,int col){
 
         int paragraphID = (int)this.getRow(file,row).get("id");
-        Logger.error("cerco idx per char: " + col + " al paragrafoID : " + paragraphID);
+
         ArrayList chars = getChars(paragraphID);
         HashMap<String, Object> ret;
-        Logger.debug("PURU: chars.size() = " + chars.size() + " col = " + col);
 
-        Logger.error("trovati chars: " + chars.size());
         if (chars.size() == 0) {
             ret = new HashMap<>();
             ret.put("idx", 0.0);

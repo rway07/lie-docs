@@ -2,6 +2,7 @@ package utils;
 
 import akka.actor.ActorRef;
 import play.Logger;
+import scala.Serializable;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -12,7 +13,8 @@ import java.util.regex.Pattern;
 /**
  * Created by enrico on 19/10/16.
  */
-public class cProject {
+public class cProject implements Serializable {
+    private static final long serialVersionUID = 1L;
 
     private HashMap<String,String> sources = null;
     private HashMap<String,String> headers = null;

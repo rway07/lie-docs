@@ -6,9 +6,7 @@ import akka.event.Logging;
 import akka.event.LoggingAdapter;
 import akka.cluster.pubsub.*;
 import akka.util.Timeout;
-import messages.compileMessage;
-import messages.documentChanges;
-import messages.updateCompile;
+import messages.*;
 import scala.concurrent.Future;
 import static akka.pattern.Patterns.ask;
 
@@ -17,7 +15,6 @@ import utils.*;
 import play.Logger;
 
 
-import java.util.Iterator;
 import java.util.concurrent.TimeUnit;
 
 public class editor extends UntypedActor {
@@ -35,6 +32,7 @@ public class editor extends UntypedActor {
     private String editorID;
     private String editorColor;
     private ActorRef compilerManager = null;
+    private ActorRef broadCaster = null;
 
     LoggingAdapter log = Logging.getLogger(getContext().system(), this);
 
@@ -48,12 +46,110 @@ public class editor extends UntypedActor {
         this.router =  DistributedPubSub.get(system).mediator();
         this.socket = out;
 
+        ActorSelection s = system.actorSelection("akka://application/user/controllerActor");
+        Future<ActorRef> f = s.resolveOne(new Timeout(5, TimeUnit.SECONDS));
+
+        f.onComplete(new OnComplete<ActorRef>() {
+            @Override
+            public void onComplete(Throwable excp, ActorRef child) throws Throwable {
+                if (excp != null)
+                  broadCaster = system.actorOf(Props.create(controllerActor.class),"controllerActor");
+                else
+                  broadCaster = child;
+            }
+        }, system.dispatcher());
+
+
+
     }
 
     @Override
     public void onReceive(Object message) {
+            Logger.debug("RICEVUTO QUALCOSA: " + message.getClass().getName());
+            if(message instanceof updateReferendum) {
+                Logger.error("NEW UPDATE REFERENDUM");
+                jsonUtil ret = new jsonUtil("");
+                if((((updateReferendum) message).getObject() == updateReferendum.enumObject.VOTER))
+                {
+                    Logger.error("NEW VOTER");
+                    ret.put("fn","addVoter");
+                    ret.put("containerName",((updateReferendum) message).getContainerName());
+                    ret.put("targetName",((updateReferendum) message).getTargetName());
+                }
+                else
+                {
+                    Logger.error("NEW VOTE");
+                    ret.put("fn","vote");
+                    ret.put("containerName",((updateReferendum) message).getContainerName());
+                    ret.put("targetName",((updateReferendum) message).getTargetName());
+                    ret.put("value",((updateReferendum) message).getValue());
+                }
+                socket.tell(ret.toString(),getSelf());
 
-            if( message instanceof updateCompile){
+            }
+            else if(message instanceof referendumMessage  && !(((referendumMessage) message).getAuthor().equals(editorID))){
+
+                    Logger.debug("NEW REFERENDUM");
+                    if(((referendumMessage) message).getTarget() == referendumMessage.targetEnum.FILE) {
+                        Logger.debug("FOR A FILE");
+                        if (((referendumMessage) message).getContainerName().equals(project)) {
+                            Logger.debug("I'M INTERESTED");
+                            referendumMessage msg = (referendumMessage) message;
+
+                            msg.getSender().tell(new updateReferendum()
+                                    .setObject(updateReferendum.enumObject.VOTER)
+                                    .setTargetName(msg.getTargetName())
+                                    .setContainerName(msg.getContainerName()), getSelf());
+
+                            jsonUtil ref = new jsonUtil("");
+                            ref.put("author", msg.getAuthor());
+                            ref.put("target", msg.getTarget().toString());
+                            ref.put("targetName", msg.getTargetName());
+                            ref.put("act", msg.getAction().toString());
+                            ref.put("containerID", msg.getContainerID());
+                            ref.put("containerName", msg.getContainerName());
+                            ref.put("targetID", msg.getTargetID());
+                            ref.put("fn", "referendum");
+                            socket.tell(ref.toString(), getSelf());
+                        }
+                    }
+            }else if(message instanceof referendumMessage && ((referendumMessage) message).getAuthor().equals(editorID)) {
+                Logger.error("RICEVUTO MIO REFEREDUM");
+                return;
+            }else if(message instanceof controllerMessage) {
+                if (((controllerMessage) message).getAction() == controllerMessage.actionEnum.ADD) {
+                    if(((controllerMessage) message).getTarget() == controllerMessage.targetEnum.FILE){
+                        if(((controllerMessage) message).getContainerName().equals(project))
+                        {
+                            jsonUtil ret = new jsonUtil("");
+                            ret.put("fn","addFile");
+                            ret.put("fileName",((controllerMessage) message).getTargetName());
+                            ret.put("fileID",((controllerMessage) message).getTargetID());
+                            ret.put("projectID",((controllerMessage) message).getContainerID());
+                            socket.tell(ret.toString(),getSelf());
+                        }
+                        return ;
+
+                    }else if(((controllerMessage) message).getTarget()== controllerMessage.targetEnum.PROJECT){
+                        return ;
+                    }
+                } else if (((controllerMessage) message).getAction() == controllerMessage.actionEnum.DELETE){
+                    if(((controllerMessage) message).getTarget() == controllerMessage.targetEnum.FILE){
+                        if(((controllerMessage) message).getContainerName().equals(project) && ((controllerMessage) message).getAuthor().equals(editorID) ){
+
+                            Logger.info("RICHIESTO NUOVO REFERENDUM");
+                            referendumMessage ref = ((controllerMessage)message).toReferedumMessage();
+                            ref.setSender(getSelf()).setForwarded(false).setAuthor(editorID);
+                            Logger.info("AUTORE: " + ref.getAuthor());
+                            broadCaster.tell(ref,getSelf());
+                            return;
+                        }
+                    }else if(((controllerMessage) message).getTarget()== controllerMessage.targetEnum.PROJECT){
+
+                    }
+                }
+            }
+            else if( message instanceof updateCompile){
                socket.tell(((updateCompile) message).toString(),getSelf());
             }
             else if (message instanceof DistributedPubSubMediator.SubscribeAck){
@@ -78,10 +174,6 @@ public class editor extends UntypedActor {
                 //dbUtil   db = new dbUtil(system);
                 if((String)jsonMsg.get("editorID") != null)
                 {
-
-
-                    // subscribe to the document named "content"
-
                     switch((String)jsonMsg.get("action"))
                     {
 
@@ -176,7 +268,6 @@ public class editor extends UntypedActor {
                 }
                 else
                 {
-
                     if(((String)jsonMsg.get("action")).equals("init")) {
                          jsonMsg.put("fn","init");
                          socket.tell(jsonMsg.toString(),getSelf());
@@ -235,7 +326,11 @@ public class editor extends UntypedActor {
 
             }
             else
+            {
+
                 unhandled(message);
+            }
+
 
 
     }

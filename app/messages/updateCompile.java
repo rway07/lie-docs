@@ -1,12 +1,13 @@
 package messages;
 
 import akka.actor.ActorRef;
+import scala.Serializable;
 import utils.jsonUtil;
 
 /**
  * Created by enrico on 18/10/16.
  */
-public class updateCompile {
+public class updateCompile implements Serializable {
     private String status;
     private ActorRef sender;
     private int totalSteps;

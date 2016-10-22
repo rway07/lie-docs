@@ -1,11 +1,12 @@
 package messages;
 
 import akka.actor.ActorRef;
+import scala.Serializable;
 
 /**
  * Created by enrico on 18/10/16.
  */
-public class sourceCompiled {
+public class sourceCompiled implements Serializable {
 
     private byte[] binData = null;
     private String objName = "";

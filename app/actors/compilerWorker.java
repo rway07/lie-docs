@@ -1,9 +1,7 @@
 package actors;
 
 import akka.actor.UntypedActor;
-import messages.compileMessage;
-import messages.sourceCompiled;
-import messages.updateCompile;
+import messages.*;
 import play.Logger;
 import utils.cProject;
 import utils.fileSystem;
@@ -25,7 +23,7 @@ import java.util.Map;
  */
 public class compilerWorker extends UntypedActor{
 
-    private final String me = "WORKER (" + getSelf().path().name() + ")";
+    private final String me = "WORKER (" + getSelf().path().toString() + ")";
     private boolean errors = false;
 
     @Override
@@ -36,12 +34,16 @@ public class compilerWorker extends UntypedActor{
         //comandi gcc:
         // gcc -c file.c -o file.o per ogni file c
         // gcc -o prog_name *.o
+        if(message instanceof controllerMessage || message instanceof referendumMessage || message instanceof updateReferendum || message instanceof voteReferendum)
+        { return ;}
+        else if(message instanceof cProject) {
 
-        if(message instanceof cProject) {
             String tmpDir = fileSystem.getTempDir();
             String workingDir = tmpDir + "/"+ getSelf().path().name() + "/" + ((cProject) message).getProjectName();
             File cwd = fileSystem.getWorkingDir(getSelf().path().name() + "/" + ((cProject) message).getProjectName());
 
+
+            errors =false;
 
             //printing soucers
             String sourceFileName = "";
@@ -78,6 +80,7 @@ public class compilerWorker extends UntypedActor{
 
             while (proc.isAlive()) {
 
+
                 if(stdError.ready())
                 {
                     errors = true;
@@ -89,6 +92,7 @@ public class compilerWorker extends UntypedActor{
                                      .setMsgType(updateCompile.type.Error)
                                      .setTotalSteps(0)
                                      .setCurrentStep(0),getSelf());
+                    Logger.debug(s);
                 }
             }
 
@@ -121,6 +125,6 @@ public class compilerWorker extends UntypedActor{
             }
         }
 
-        //getSelf().tell("sono un compilatore",getSender());
+
     }
 }

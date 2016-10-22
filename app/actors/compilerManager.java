@@ -2,11 +2,12 @@ package actors;
 
 import akka.actor.*;
 import akka.dispatch.OnComplete;
+import akka.routing.ActorRefRoutee;
 import akka.routing.FromConfig;
+import akka.routing.Routee;
+import akka.routing.Routees;
 import akka.util.Timeout;
-import messages.compileMessage;
-import messages.sourceCompiled;
-import messages.updateCompile;
+import messages.*;
 import play.Logger;
 import scala.concurrent.Future;
 import utils.cProject;
@@ -16,6 +17,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.InputStreamReader;
 import java.util.Iterator;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -33,13 +35,18 @@ public class compilerManager extends UntypedActor{
     private String project;
     private final String me = "MANAGER";
     private String objs = "";
+    private int totalWorker = 0;
     private boolean errors = false;
+    long startTime = 0;
+
 
     //manager: 1- ottiene tutti i c del progetto
     //         2- analizza gli include locali
     //         3- distribuisce file c e include necessari al worker
     //         4- attende file o da tutti i worker
     //         5- linka il risultato
+
+
 
     public compilerManager(String project, ActorRef db) {
         this.db = db;
@@ -58,15 +65,26 @@ public class compilerManager extends UntypedActor{
                 } else {
                     workerRouter = child;
                 }
+
+
             }
         }, getContext().system().dispatcher());
     }
 
 
+
     @Override
     public void onReceive(Object message) throws Throwable {
 
-        if(message instanceof compileMessage && ((compileMessage) message).projectCreated)
+        if(message instanceof controllerMessage || message instanceof referendumMessage || message instanceof updateReferendum || message instanceof voteReferendum)
+        { return ;}
+        else if(message instanceof akka.routing.Routees)
+        {
+            List<Routee> w = ((Routees) message).getRoutees();
+            totalWorker = w.size();
+
+        }
+        else if(message instanceof compileMessage && ((compileMessage) message).projectCreated)
         {
 
             cProject project = (cProject)((compileMessage) message).getCProject();
@@ -91,7 +109,7 @@ public class compilerManager extends UntypedActor{
             ((compileMessage) message).getSender().tell(new updateCompile()
                                                             .setSenderName(me)
                                                             .setMsgType(updateCompile.type.Info)
-                                                            .setStatus("Compilation work distribuited among " + totaleObject + " worker")
+                                                            .setStatus("Compilation work splitted among " + ((totalWorker>totaleObject)?totaleObject:totalWorker) + " worker")
                                                             .setTotalSteps(totaleObject+1)
                                                             .setSender(((compileMessage) message).getSender())
                                                             .setCurrentStep(0),getSelf());
@@ -149,7 +167,7 @@ public class compilerManager extends UntypedActor{
                 }
 
                 ((sourceCompiled)message).getSender().tell(new updateCompile()
-                                                               .setStatus("Linking Successfull")
+                                                               .setStatus("Linking Successfull. Building time: " + ((System.nanoTime() - startTime)/10e6) + " ns")
                                                                .setSender(((sourceCompiled) message).getSender())
                                                                .setSenderName(me)
                                                                .setMsgType(updateCompile.type.Success)
@@ -161,6 +179,8 @@ public class compilerManager extends UntypedActor{
         }
         else if(message instanceof compileMessage)
         {
+            startTime = System.nanoTime();
+            workerRouter.tell(akka.routing.GetRoutees.getInstance(),getSelf());
             db.tell(message,getSelf());
         }else if( message instanceof updateCompile)
         {

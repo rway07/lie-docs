@@ -7,9 +7,10 @@ GET     /                                   controllers.HomeController.index
 POST    /project/:name/new                  controllers.HomeController.newProject(name:String)
 DELETE  /project/:project_id/delete         controllers.HomeController.removeProject(project_id:String)
 GET     /project/:project_id/:file_id       controllers.EditorController.editor(project_id:String, file_id:String)
-POST    /project/:project_id/:file_name     controllers.EditorController.newFile(project_id:String, file_name:String)
-POST    /file/:id/delete                    controllers.EditorController.removeFile(id:String)
+POST    /file/new                           controllers.EditorController.newFile
+POST    /file/delete                        controllers.EditorController.removeFile
 
+GET     /project/:project_id/:file_id/modal controllers.EditorController.emptyModal(project_id:String, file_id:String)
 
 GET     /:project/:file                     controllers.TestController.index(project:String,file:String)
 GET     /ws                                 controllers.WebsocketController.ws

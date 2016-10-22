@@ -1,6 +1,11 @@
 package controllers;
 
+
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import messages.controllerMessage;
+import messages.referendumMessage;
+import play.data.DynamicForm;
+import play.data.Form;
 import play.mvc.Controller;
 import play.mvc.Result;
 import views.html.*;
@@ -8,21 +13,48 @@ import utils.dbUtil;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import akka.actor.*;
+import javax.inject.*;
 /**
  * This controller contains an action to handle HTTP requests
  * to the application's home page.
  */
 public class EditorController extends Controller {
+
+    final ActorSelection controllerActor;
+
+    @Inject public EditorController(ActorSystem system) {
+        controllerActor  = system.actorSelection("akka://application/user/controllerActor");
+    }
+
+
+    public Result emptyModal(String a , String b){
+        return ok(empty_modal.render());
+    }
     // Create a new file
-    public Result newFile(String idProject, String fileName) {
+    public Result newFile() {
+
+        DynamicForm form = Form.form().bindFromRequest();
+        String projectName = form.data().get("projectName");
+        int projectID = Integer.parseInt(form.data().get("projectID"));
+        String fileName = form.data().get("fileName");
+
         ArrayList<HashMap<String, Object>> data;
         int result =
-            dbUtil.executeUpdate("insert into files (project, name) values (" + idProject + ", '" + fileName + "')");
+            dbUtil.executeUpdate("insert into files (project, name) values (" + projectID + ", '" + fileName + "')");
 
         if (result != 0) {
-            data = dbUtil.executeQuery("select id from files where name = '" + fileName + "' and project = " + idProject + ";");
+            data = dbUtil.executeQuery("select id from files where name = '" + fileName + "' and project = " + projectID + ";");
 
             int id = (int)data.get(0).get("id");
+
+            controllerActor.tell(new controllerMessage()
+                    .setAction(controllerMessage.actionEnum.ADD)
+                    .setTarget(controllerMessage.targetEnum.FILE)
+                    .setTargetID(id)
+                    .setContainerName(projectName)
+                    .setContainerID(projectID)
+                    .setTargetName(fileName),ActorRef.noSender());
 
             // Creating json node
             ObjectNode node = play.libs.Json.newObject();
@@ -35,14 +67,37 @@ public class EditorController extends Controller {
     }
 
     // Remove a file
-    public Result removeFile(String idFile) {
+    public Result removeFile() {
+
+        DynamicForm form = Form.form().bindFromRequest();
+        String author = form.data().get("author");
+        String project = form.data().get("project");
+        String file = form.data().get("file");
+        int fileID = Integer.parseInt(form.data().get("fileID"));
+        int projectID =Integer.parseInt(form.data().get("projectID"));
+
+        HashMap f = (HashMap) (((ArrayList)dbUtil.query("select project from files where id = " + fileID)).get(0));
+
+        controllerActor.tell(new controllerMessage()
+                .setAction(controllerMessage.actionEnum.DELETE)
+                .setTarget(controllerMessage.targetEnum.FILE)
+                .setTargetID(fileID)
+                .setContainerID(projectID)
+                .setRequireVote(true)
+                .setContainerName(project)
+                .setAuthor(author)
+                .setTargetName(file),ActorRef.noSender());
+
+        return ok("DONE");
+
+        /*
         int result = dbUtil.executeUpdate("delete from files where id = " + idFile + ";");
 
         if (result != 0) {
             return ok("DONE");
         } else {
             return internalServerError("Errore during file deletion!");
-        }
+        }*/
     }
 
     // Return the view for file's editing

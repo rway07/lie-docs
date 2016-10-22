@@ -5,59 +5,54 @@
 function newFile() {
     var id = $("#projectID").val();
     var name = $("#fileName").val();
+    var prjName = $("#project").attr("_projectName");
 
     $.ajax({
-        url: "/project/" + id + "/" + name,
+        url: "/file/new",
         type: "post",
+        data:{"projectID":id,"fileName":name,"projectName":prjName},
         error: function(data) {
             console.log(data);
         },
         success: function(data) {
-            addFileEntry(id, data.id, name);
             $("#fileName").val("");
             $("#newFileModal").modal('toggle');
         }
     });
 }
 
-function getLocation(href) {
-    var l = document.createElement("a");
-    l.href = href;
-    return l;
-};
 
-function fileDeleteEventListener() {
+
+window.fileDeleteEventListener= function(fileID,fileName) {
     $(document).on("click", ".remove_file", function() {
-        var id = $(this).attr("id");
-        var currentFileID = $("#idFile").val();
 
         $.ajax({
-            url: "/file/" + id + "/delete",
+            url: "/file/delete",
             type: "POST",
+            data: {"author":window.editorID,
+                   "projectID":$("#projectID").val(),
+                   "project":$("#project").attr("_projectName"),
+                   "file":fileName,
+                   "fileID":fileID},
             error: function(data) {
                 console.log(data);
                 alert("Error removing the file!");
             },
             success: function() {
-                removeFileEntry(id);
+                /*removeFileEntry(id);
                 if (currentFileID == id) {
                     // Reload page
                     var location = getLocation(window.location.href).host;
                     window.open("http://" + location, "_self");
-                }
+                }*/
+                console.log("openQuorum result");
+
             }
         });
     });
 }
 
-function addFileEntry(project_id, id, name) {
-    $("#filesList")
-        .append('<div id="container-' + id + '">' +
-            '<li><strong><a href="/project/' + project_id + '/' + id + '">' +
-             name + ' </a></strong></li><i id="' + id + '" onclick="fileDeleteEventListener();"' +
-            'class="remove_file fa fa-trash"></i>' +
-            '</div>');
-}
+
 
 function removeFileEntry(id) {
     var node = "#container-" + id;

@@ -9,7 +9,7 @@
 
     <!-- TODO il modal per l'aggiunta del file non acquisisce il focus alla textbox correttamente -->
 @modals.new_file()
-@navbar.editor(projectName)
+@navbar.editor(projectName,fileName)
     <body>
         <div class="container-fluid"><!-- Project view -->
             <div class="row">
@@ -24,7 +24,7 @@
                         </button>
                     </div>
                     <br>
-                    <ul id="filesList" class="list">
+                    <ul id="filesList" style="margin-left:-25px;" class="list">
                         @for(f <- filesList) {
                             <div id="container-@f("id")">
                                 <li>
@@ -33,7 +33,7 @@
                                         @f("name")
                                         </a>
                                     </strong>
-                                    <i id="@f("id")" onclick="fileDeleteEventListener();" style="cursor:pointer;" class="remove_file fa fa-trash pull-right"></i>
+                                    <i id="@f("id")" onclick="fileDeleteEventListener(@f("id"),'@f("name")');" style="cursor:pointer;" class="remove_file fa fa-trash pull-right"></i>
                                 </li>
                             </div>
                         }
@@ -65,7 +65,7 @@
                         </div>
                         <div class="panel-footer">
                           <div class="progress">
-                            <div id="progressBar" class="progress-bar progress-bar-success progress-bar-striped" role="progressbar" aria-valuenow="40" aria-valuemin="0" aria-valuemax="100" style="width: 40%">
+                            <div id="progressBar" class="progress-bar progress-bar-success progress-bar-striped" role="progressbar" aria-valuenow="40" aria-valuemin="0" aria-valuemax="100" style="width: 0;">
                                 <span class="sr-only"></span>
                             </div>
                           </div>

@@ -1,11 +1,19 @@
 package controllers;
 
+import akka.actor.ActorRef;
+import akka.actor.ActorSelection;
+import akka.actor.ActorSystem;
+import akka.cluster.pubsub.DistributedPubSub;
+import akka.routing.Broadcast;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import play.Logger;
 import play.mvc.*;
 import views.html.*;
 import java.util.ArrayList;
 
 import utils.*;
+
+import javax.inject.Inject;
 import java.util.HashMap;
 
 /**
@@ -19,6 +27,17 @@ public class HomeController extends Controller {
      * this method will be called when the application receives a
      * <code>GET</code> request with a path of <code>/</code>.
      */
+
+
+
+    @Inject
+    public HomeController(ActorSystem system) {
+        ActorSelection sel  = system.actorSelection("../*");
+        sel.tell("@@@@@@@@@@@@@@@@@@@@@@@@@@@Hello everybody",ActorRef.noSender());
+
+
+
+    }
 
     // Create a new project
     public Result newProject(String name) {
@@ -55,6 +74,10 @@ public class HomeController extends Controller {
 
     // Return the main view with the project list
     public Result index() {
+
+        //Logger.info("sono qui "+router.toString());
+        //router.tell(new Broadcast("Watch out for Davy Jones' locker"),ActorRef.noSender());
+
         ArrayList projectslist = dbUtil.executeQuery("select id, name from projects");
         ArrayList<HashMap<String, Object>> list = new ArrayList<>();
 
