@@ -28,9 +28,6 @@ public class EditorController extends Controller {
     }
 
 
-    public Result emptyModal(String a , String b){
-        return ok(empty_modal.render());
-    }
     // Create a new file
     public Result newFile() {
 

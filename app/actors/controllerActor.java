@@ -50,18 +50,6 @@ public class controllerActor extends UntypedActor {
                 remoteEditor.tell(message,ActorRef.noSender());
             }
         }
-        else if (message instanceof referendumMessage && !((referendumMessage) message).isForwarded()){
-
-            ((referendumMessage) message).setForwarded(true);
-
-            Set<String> remotes = nodes.keySet();
-            Iterator<String> iremotes = remotes.iterator();
-            while(iremotes.hasNext())
-            {
-                ActorSelection remoteEditor = getContext().system().actorSelection(iremotes.next() + "/user/*");
-                remoteEditor.tell(message,ActorRef.noSender());
-            }
-        }
         if (message instanceof ClusterEvent.MemberUp) {
             ClusterEvent.MemberUp mUp = (ClusterEvent.MemberUp) message;
             nodes.put(mUp.member().address().toString(),mUp.member().address().toString());

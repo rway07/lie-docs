@@ -1,0 +1,29 @@
+<div class="modal fade" id="emptyModal" tabindex="-1" role="dialog" aria-labelledby="newFileModalLabel">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <h4 class="modal-title" id="modalTitle"></h4>
+            </div>
+            <div class="modal-body">
+
+                <p class="referendumDescription" id="referendumSubject"></p>
+                <p class="referendumDescription">Since it may be an harmfull action, I have announced a new referedum among all active editors.</p>
+                <p class="referendumDescription">If the qourum will be get you can proceed otherwise you should ask new votation</p>
+                <div style="margin-top: 20px;" class="table table-bordered">
+                    <div class="row"><div class="col-md-push-3 col-md-4 text-center">Active Editors</div><div id="activeEditors" class="col-md-push-2 col-md-2 text-center">0</div></div>
+                    <div class="row" ><div style="border-bottom:1px solid #f2f2f2" class="col-md-push-3 col-md-4 text-center">Quorum</div><div style="border-bottom:1px solid #f2f2f2" id="quorum" class="col-md-push-2 col-md-2 text-center">0</div></div>
+                    <div class="row"><div class="col-md-push-3 col-md-4 text-center">Accept</div><div style="color:green;" id="acceptReferendum" class="col-md-push-2 col-md-2 text-center">0</div></div>
+                    <div class="row"><div class="col-md-push-3 col-md-4 text-center">Decline</div><div style="color:red;" id="discardReferendum" class="col-md-push-2 col-md-2 text-center">0</div></div>
+
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                <button id="newFileButton" name="newFileButton" type="button" class="btn btn-primary" onclick="newFile();">
+                    Add File
+                </button>
+            </div>
+        </div>
+    </div>
+</div>

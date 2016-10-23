@@ -10,7 +10,7 @@ GET     /project/:project_id/:file_id       controllers.EditorController.editor(
 POST    /file/new                           controllers.EditorController.newFile
 POST    /file/delete                        controllers.EditorController.removeFile
 
-GET     /project/:project_id/:file_id/modal controllers.EditorController.emptyModal(project_id:String, file_id:String)
+
 
 GET     /:project/:file                     controllers.TestController.index(project:String,file:String)
 GET     /ws                                 controllers.WebsocketController.ws

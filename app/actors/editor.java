@@ -15,6 +15,7 @@ import utils.*;
 import play.Logger;
 
 
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 public class editor extends UntypedActor {
@@ -59,13 +60,10 @@ public class editor extends UntypedActor {
             }
         }, system.dispatcher());
 
-
-
     }
 
     @Override
     public void onReceive(Object message) {
-            Logger.debug("RICEVUTO QUALCOSA: " + message.getClass().getName());
             if(message instanceof updateReferendum) {
                 Logger.error("NEW UPDATE REFERENDUM");
                 jsonUtil ret = new jsonUtil("");
@@ -75,6 +73,7 @@ public class editor extends UntypedActor {
                     ret.put("fn","addVoter");
                     ret.put("containerName",((updateReferendum) message).getContainerName());
                     ret.put("targetName",((updateReferendum) message).getTargetName());
+                    ret.put("editor",((updateReferendum) message).getEditorID());
                 }
                 else
                 {
@@ -89,17 +88,20 @@ public class editor extends UntypedActor {
             }
             else if(message instanceof referendumMessage  && !(((referendumMessage) message).getAuthor().equals(editorID))){
 
+
                     Logger.debug("NEW REFERENDUM");
                     if(((referendumMessage) message).getTarget() == referendumMessage.targetEnum.FILE) {
                         Logger.debug("FOR A FILE");
                         if (((referendumMessage) message).getContainerName().equals(project)) {
-                            Logger.debug("I'M INTERESTED");
+                            Logger.debug("I'M INTERESTED : " + editorID);
                             referendumMessage msg = (referendumMessage) message;
 
                             msg.getSender().tell(new updateReferendum()
                                     .setObject(updateReferendum.enumObject.VOTER)
+                                    .setEditorID(editorID)
                                     .setTargetName(msg.getTargetName())
-                                    .setContainerName(msg.getContainerName()), getSelf());
+                                    .setContainerName(msg.getContainerName())
+                                    , getSelf());
 
                             jsonUtil ref = new jsonUtil("");
                             ref.put("author", msg.getAuthor());
@@ -109,6 +111,8 @@ public class editor extends UntypedActor {
                             ref.put("containerID", msg.getContainerID());
                             ref.put("containerName", msg.getContainerName());
                             ref.put("targetID", msg.getTargetID());
+                            ref.put("sender",msg.getSender().toString());
+
                             ref.put("fn", "referendum");
                             socket.tell(ref.toString(), getSelf());
                         }
@@ -137,11 +141,14 @@ public class editor extends UntypedActor {
                     if(((controllerMessage) message).getTarget() == controllerMessage.targetEnum.FILE){
                         if(((controllerMessage) message).getContainerName().equals(project) && ((controllerMessage) message).getAuthor().equals(editorID) ){
 
+                            Logger.debug("*************************************************************************");
                             Logger.info("RICHIESTO NUOVO REFERENDUM");
+
+
                             referendumMessage ref = ((controllerMessage)message).toReferedumMessage();
                             ref.setSender(getSelf()).setForwarded(false).setAuthor(editorID);
                             Logger.info("AUTORE: " + ref.getAuthor());
-                            broadCaster.tell(ref,getSelf());
+                            router.tell(new DistributedPubSubMediator.Publish(this.project, ref),getSelf());
                             return;
                         }
                     }else if(((controllerMessage) message).getTarget()== controllerMessage.targetEnum.PROJECT){
@@ -152,7 +159,7 @@ public class editor extends UntypedActor {
             else if( message instanceof updateCompile){
                socket.tell(((updateCompile) message).toString(),getSelf());
             }
-            else if (message instanceof DistributedPubSubMediator.SubscribeAck){
+            else if (message instanceof DistributedPubSubMediator.SubscribeAck && ((DistributedPubSubMediator.SubscribeAck) message).subscribe().topic().equals(room)){
                 jsonUtil msg = new jsonUtil("");
                 msg.put("fn","join");
                 msg.put("editorID",this.editorID);
@@ -222,6 +229,7 @@ public class editor extends UntypedActor {
                                         db.tell(initMsg.toString(),getSelf());
                                         editorID = (String)jsonMsg.get("editorID");
                                         router.tell(new DistributedPubSubMediator.Subscribe(room, getSelf()), getSelf());
+                                        router.tell(new DistributedPubSubMediator.Subscribe(project, getSelf()), getSelf());
                                     }
                                 }, system.dispatcher());
                                 //initialize db actor if require, one for each room

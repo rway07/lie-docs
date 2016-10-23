@@ -412,13 +412,13 @@ function init(){
              param.fileName + ' </a></strong><i id="' + param.fileID + '" onclick="fileDeleteEventListener();"' +
              'class="remove_file fa fa-trash pull-right" style="cursor:pointer;"></i>' +
              '</li></div>');
- }
+ };
 
  window.getLocation = function(href){
      var l = document.createElement("a");
      l.href = href;
      return l;
- }
+ };
  window.viewFn['referendum'] = function(param){
 
      console.log("nuovo referendum");
@@ -435,7 +435,9 @@ function init(){
      console.log(param);
  };
  window.viewFn['addVoter'] = function(param){
-     console.log("addVoter");
+     window.activeEditors +=1;
+    $("#activeEditors").text(parseInt(window.activeEditors));
+     $("#quorum").text(Math.ceil(parseInt(window.activeEditors)/2));
      console.log(param);
  };
 
@@ -574,6 +576,7 @@ String.prototype.makeid = function(len)
 
 $.fn.focusEditable = function(col)
 {
+
   //var c = (typeof col === 'undefined')?0:col;
   var currRow = $(this).children("td");
 
@@ -589,8 +592,10 @@ $.fn.focusEditable = function(col)
     var actualLength =  currTextNode.length;
     r.setStart(currTextNode, min(c,actualLength));
     r.setEnd(currTextNode, min(c,actualLength));
+    r.collapse(true);
     s.removeAllRanges();
     s.addRange(r);
+    //currRow.get(0).focus();
 
   } else {
     currRow.get(0).focus();
@@ -641,6 +646,7 @@ $.fn.fn = function(e,notifyChange){
        };
 
        notifyChange(JSON.stringify(streamPos));
+       return;
   }
 
 

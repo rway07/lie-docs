@@ -9,6 +9,17 @@ public class updateReferendum extends referendumMessage {
     private enumObject object;
     private Object value;
 
+    public String getEditorID() {
+        return editorID;
+    }
+
+    public updateReferendum setEditorID(String editorID) {
+        this.editorID = editorID;
+        return this;
+    }
+
+    private String editorID;
+
     public enumObject getObject() {
         return object;
     }

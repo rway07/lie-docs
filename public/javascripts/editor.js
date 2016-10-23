@@ -24,8 +24,15 @@ function newFile() {
 
 
 window.fileDeleteEventListener= function(fileID,fileName) {
-    $(document).on("click", ".remove_file", function() {
 
+        window.activeEditors = 0;
+        var modal = $("#emptyModal");
+        modal.find("#modalTitle").text("Delete Referendum");
+        modal.find("#referendumSubject").text("You are trying to remove the file : " + fileName + " for project " + $("#project").attr("_projectName"));
+        modal.find("")
+        modal.modal("show");
+
+        console.log("************************ NEW REFERENDUM **************************");
         $.ajax({
             url: "/file/delete",
             type: "POST",
@@ -39,6 +46,7 @@ window.fileDeleteEventListener= function(fileID,fileName) {
                 alert("Error removing the file!");
             },
             success: function() {
+
                 /*removeFileEntry(id);
                 if (currentFileID == id) {
                     // Reload page
@@ -49,7 +57,6 @@ window.fileDeleteEventListener= function(fileID,fileName) {
 
             }
         });
-    });
 }
 
 
