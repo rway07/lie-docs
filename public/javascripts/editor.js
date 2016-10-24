@@ -25,14 +25,36 @@ function newFile() {
 
 window.fileDeleteEventListener= function(fileID,fileName) {
 
-        window.activeEditors = 0;
+        var active = Object.keys(window.activeEditors).length;
         var modal = $("#emptyModal");
         modal.find("#modalTitle").text("Delete Referendum");
-        modal.find("#referendumSubject").text("You are trying to remove the file : " + fileName + " for project " + $("#project").attr("_projectName"));
-        modal.find("")
+
+        modal.find(".referendumDescription").each(function(idx,obj){$(obj).remove();});
+
+        modal.find("#refDescr").append("<p class=\"referendumDescription\" id=\"referendumSubject\">You are trying to remove the file : " + fileName + " for project " + $("#project").attr("_projectName")+"</p>");
+        modal.find("#refDescr").append("<p class=\"referendumDescription\">Since it may be an harmfull action, I have announced a new referedum among all active editors.</p>");
+        modal.find("#refDescr").append("<p class=\"referendumDescription\">If the qourum will be get you can proceed otherwise you should ask new votation</p>");
+
+        modal.find("#activeEditors").text(parseInt(active));
+        modal.find("#quorum").text(Math.ceil(parseInt(active)/2));
+
+        modal.find("#acceptReferendum").text(0);
+        modal.find("#discardReferendum").text(0);
+
+        modal.find("#refResult").html("");
+
+        modal.find("#fail").hide();
+
+        if(active > 0)
+          modal.find("#success").hide();
+        else
+            modal.find("#success").show();
+
+        modal.find("#success").text("Proceed Delete");
+        modal.find("#fileID").attr("fileID", fileID);
         modal.modal("show");
 
-        console.log("************************ NEW REFERENDUM **************************");
+
         $.ajax({
             url: "/file/delete",
             type: "POST",
@@ -41,21 +63,8 @@ window.fileDeleteEventListener= function(fileID,fileName) {
                    "project":$("#project").attr("_projectName"),
                    "file":fileName,
                    "fileID":fileID},
-            error: function(data) {
-                console.log(data);
-                alert("Error removing the file!");
-            },
-            success: function() {
 
-                /*removeFileEntry(id);
-                if (currentFileID == id) {
-                    // Reload page
-                    var location = getLocation(window.location.href).host;
-                    window.open("http://" + location, "_self");
-                }*/
-                console.log("openQuorum result");
-
-            }
+            success: function() {}
         });
 }
 

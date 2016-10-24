@@ -24,9 +24,9 @@
     <appender-ref ref="STDOUT" />
   </appender>
 
-  <logger name="play" level="INFO" />
+  <logger name="play" level="ERROR" />
   <logger name="application" level="DEBUG" />
-  <logger name="akka" level="DEBUG" />
+  <logger name="akka" level="ERROR" />
   <!-- Off these ones as they are annoying, and anyway we manage configuration ourselves -->
   <logger name="com.avaje.ebean.config.PropertyMapLoader" level="OFF" />
   <logger name="com.avaje.ebeaninternal.server.core.XmlConfigLoader" level="OFF" />

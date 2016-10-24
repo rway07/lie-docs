@@ -17,6 +17,7 @@ function init(){
  window.caret = "<div class=\"caret\"></div>";
  window.elementRow = "<tr><td contenteditable=\"true\"></td></tr>";
  window.viewFn = [];
+ window.activeEditors =[];
 
  window.randomColor = function () {
      /*Colors
@@ -382,7 +383,17 @@ function init(){
  };
  window.viewFn['join'] = function(param){
 
-     if(param.editorID != window.editorID) {
+     if(param.editorID != window.editorID && typeof param.controlMessage != "undefined")
+     {
+         console.log("CONTROL: JOIN project");
+         if(param.editorID != window.editorID)
+           window.activeEditors[param.editorID]=1;
+
+         var pingData = {"forward":true,"controlMessage":"","fn":"ping","action": "ping", "editorID": window.editorID, "editorColor": window.editorColor};
+         stream.send(JSON.stringify(pingData));
+         console.log("PROJECT JOIN:"+Object.keys(window.activeEditors).length);
+     }
+     else if(param.editorID != window.editorID && typeof param.project == "undefined") {
          var pingData = {"action": "ping", "editorID": window.editorID, "editorColor": window.editorColor};
 
          if (typeof $("#" + param.editorID).get(0) == "undefined")
@@ -391,15 +402,27 @@ function init(){
          stream.send(JSON.stringify(pingData));
      }
 
+
  };
 
  window.viewFn['leave'] = function(param){
 
-      $("#"+param.editorID).remove();
+      if(typeof param.controlMessage != "undefined") {
+          console.log("CONTROL: LEAVE project");
+          if(param.editorID != window.editorID)
+            delete window.activeEditors[param.editorID];
+
+      } else if(typeof param.controlMessage == "undefined")
+        $("#"+param.editorID).remove();
  };
 
  window.viewFn['ping'] = function(param){
-     if(param.editorID != window.editorID && typeof $("#" + param.editorID).get(0) == "undefined")
+     if(typeof param.controlMessage != "undefined"){
+         console.log("CONTROL: PING project");
+         if(param.editorID != window.editorID)
+           window.activeEditors[param.editorID]=1;
+     }
+     else if(param.editorID != window.editorID && typeof $("#" + param.editorID).get(0) == "undefined")
      {
        window.addCaret(0,0,null,param.editorID,param.editorColor);
      }
@@ -419,30 +442,93 @@ function init(){
      l.href = href;
      return l;
  };
- window.viewFn['referendum'] = function(param){
 
-     console.log("nuovo referendum");
-     $.get(getLocation(window.location.href) + "/modal",function(data){
-         console.log("carico modale");
-         var modal = $.parseHTML(data);
-         $(document).append(modal);
-         console.log("modal appended");
-         $("#emptyModal").modal("show");
 
-         console.log(modal);
+ window.viewFn['execReferendum'] = function(param){
 
-     },'html');
+     console.log("referendum");
      console.log(param);
- };
- window.viewFn['addVoter'] = function(param){
-     window.activeEditors +=1;
-    $("#activeEditors").text(parseInt(window.activeEditors));
-     $("#quorum").text(Math.ceil(parseInt(window.activeEditors)/2));
-     console.log(param);
+
+
+     var modal = $("#emptyModal");
+     modal.find("#modalTitle").text("Delete Referendum");
+
+     modal.find(".referendumDescription").each(function(idx,obj){$(obj).remove();});
+
+     modal.find("#refDescr").append("<p class=\"referendumDescription\" id=\"referendumSubject\">Would you like to remove "+param.targetName + " for prject " + param.containerName +"</p>");
+     modal.find("#refStat").remove();
+     modal.find("#refResult").remove();
+
+     var vote ={"sender":param.sender,"fn":"execVote","action":"vote"};
+
+     modal.find("#success").text("Agree").show().on('click',function(){
+         console.log("votato: yes");
+         vote["vote"] = 1;
+         stream.send(JSON.stringify(vote))
+         modal.modal('toggle');
+     });
+     modal.find("#fail").text("Not Agree").show().on('click',function(){
+         console.log("votato: no");
+         vote["vote"]=0;
+         stream.send(JSON.stringify(vote))
+         modal.modal('toggle');
+     });
+
+
+     modal.modal("show");
+
+
  };
 
- window.viewFn['vote'] = function(param){
-     console.log("vote");
+ window.viewFn['execVote'] = function(param){
+
+     var modal = $("#emptyModal");
+
+     if(parseInt(param.value) == 1)
+         modal.find("#acceptReferendum").text(parseInt(modal.find("#acceptReferendum").text())+1);
+     else
+         modal.find("#discardReferendum").text(parseInt(modal.find("#discardReferendum").text())+1);
+
+     if(parseInt(modal.find("#acceptReferendum").text())>= parseInt(modal.find("#qourum").text()))
+         modal.find("#success").show();
+
+     if(parseInt(parseInt(modal.find("#acceptReferendum").text()) + parseInt(modal.find("#discardReferendum").text())) == Object.keys(window.activeEditors).length)
+     {
+         console.log("quorum: " + parseInt(modal.find("#qourum").text()));
+         modal.find("#spinner").hide();
+         if(parseInt(modal.find("#acceptReferendum").text())>= parseInt(modal.find("#quorum").text()))
+         {
+             modal.find("#refResult").append("<p><i class=\"fa-2x fa fa-check\" aria-hidden=\"true\"></i> Referndum Closed: ACCEPTED</p><p>Your request was accepted by other editors. If you wish you can continue with the deletion procedure</p>")
+             modal.find("#success").on("click",function(){
+
+                 console.log("sono qui e cancello il file: " + parseInt(modal.find("fileID").attr("fileID")));
+                 $.ajax({
+                     url: "/file/execDelete",
+                     type: "POST",
+                     data: {"fileID":parseInt(modal.find("#fileID").attr("fileid"))},
+                     error: function(data) {
+                         console.log(data);
+                         alert("Error removing the file!");
+                     },
+                     success: function() {
+
+                         alert("File rimosso correttamente");
+
+                     }
+                 });
+
+             }).show();
+
+         }
+         else{
+             modal.find("#refResult").append("<p><i class=\"fa-2x fa fa-times\" aria-hidden=\"true\"></i> Referndum Closed: DECLINED</p><p>Your request was declined by other editors. If you wish you can try a new referendum</p>")
+         }
+         modal.find("#fail").show();
+
+
+     }
+
+
      console.log(param);
  };
 
@@ -536,9 +622,12 @@ $(document).ready(function(){
 });
 
 var exec = function(resp){
-    console.log("Server Say: " + resp.data);
-    var data = JSON.parse(resp.data);
 
+    var data = JSON.parse(resp.data);
+    data.selfMessage = (data.editorID == window.editorID);
+
+    console.log("Server Say: ");
+    console.log(data)
     switch(data.fn){
 
 
@@ -553,10 +642,13 @@ var exec = function(resp){
         break;
       }
       default:{
-        window.removeVirtualCaret(data.editorID,data.fn);
-        window.normalizeTextNode(data.r);
-        window.viewFn[data.fn](data);
-        window.restoreCarets(data);
+
+            console.log("dentro: ");
+            console.log(data);
+            window.removeVirtualCaret(data.editorID,data.fn);
+            window.normalizeTextNode(data.r);
+            window.viewFn[data.fn](data);
+            window.restoreCarets(data);
       }
     }
 };

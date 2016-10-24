@@ -9,7 +9,7 @@ DELETE  /project/:project_id/delete         controllers.HomeController.removePro
 GET     /project/:project_id/:file_id       controllers.EditorController.editor(project_id:String, file_id:String)
 POST    /file/new                           controllers.EditorController.newFile
 POST    /file/delete                        controllers.EditorController.removeFile
-
+POST    /file/execDelete                    controllers.EditorController.execDelete
 
 
 GET     /:project/:file                     controllers.TestController.index(project:String,file:String)

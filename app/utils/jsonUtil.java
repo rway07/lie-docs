@@ -22,6 +22,10 @@ public class jsonUtil {
 
     private HashMap<String,JSONArray> a = null;
 
+    public void remove(String key)
+    {
+        o.remove(key);
+    }
     public void add(String key,JSONObject obj)
     {
        //try to get JSON array for key

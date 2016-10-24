@@ -28,6 +28,8 @@ public class EditorController extends Controller {
     }
 
 
+
+
     // Create a new file
     public Result newFile() {
 
@@ -86,15 +88,19 @@ public class EditorController extends Controller {
                 .setTargetName(file),ActorRef.noSender());
 
         return ok("DONE");
+    }
 
-        /*
-        int result = dbUtil.executeUpdate("delete from files where id = " + idFile + ";");
+    public Result execDelete(){
+        DynamicForm form = Form.form().bindFromRequest();
+        int fileID = Integer.parseInt(form.data().get("fileID"));
+
+        int result = dbUtil.executeUpdate("delete from files where id = " + fileID + ";");
 
         if (result != 0) {
             return ok("DONE");
         } else {
             return internalServerError("Errore during file deletion!");
-        }*/
+        }
     }
 
     // Return the view for file's editing
