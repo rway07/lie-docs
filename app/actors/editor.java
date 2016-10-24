@@ -46,20 +46,6 @@ public class editor extends UntypedActor {
 
         this.router =  DistributedPubSub.get(system).mediator();
         this.socket = out;
-
-        /*ActorSelection s = system.actorSelection("akka://application/user/controllerActor");
-        Future<ActorRef> f = s.resolveOne(new Timeout(5, TimeUnit.SECONDS));
-
-        f.onComplete(new OnComplete<ActorRef>() {
-            @Override
-            public void onComplete(Throwable excp, ActorRef child) throws Throwable {
-                if (excp != null)
-                  broadCaster = system.actorOf(Props.create(controllerActor.class),"controllerActor");
-                else
-                  broadCaster = child;
-            }
-        }, system.dispatcher());*/
-
     }
 
     @Override

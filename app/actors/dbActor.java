@@ -31,9 +31,7 @@ public class dbActor extends UntypedActor {
     @Override
     public void onReceive(Object msg) {
 
-        if(msg instanceof controllerMessage || msg instanceof referendumMessage || msg instanceof updateReferendum || msg instanceof voteReferendum)
-        { return ;}
-        else if(msg instanceof compileMessage)
+        if(msg instanceof compileMessage)
         {
             cProject p = new cProject();
             p = new cProject();

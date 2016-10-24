@@ -2,7 +2,6 @@ package actors;
 
 import akka.actor.*;
 import akka.dispatch.OnComplete;
-import akka.routing.ActorRefRoutee;
 import akka.routing.FromConfig;
 import akka.routing.Routee;
 import akka.routing.Routees;
@@ -76,9 +75,7 @@ public class compilerManager extends UntypedActor{
     @Override
     public void onReceive(Object message) throws Throwable {
 
-        if(message instanceof controllerMessage || message instanceof referendumMessage || message instanceof updateReferendum || message instanceof voteReferendum)
-        { return ;}
-        else if(message instanceof akka.routing.Routees)
+        if(message instanceof akka.routing.Routees)
         {
             List<Routee> w = ((Routees) message).getRoutees();
             totalWorker = w.size();

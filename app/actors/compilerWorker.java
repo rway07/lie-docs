@@ -34,9 +34,7 @@ public class compilerWorker extends UntypedActor{
         //comandi gcc:
         // gcc -c file.c -o file.o per ogni file c
         // gcc -o prog_name *.o
-        if(message instanceof controllerMessage || message instanceof referendumMessage || message instanceof updateReferendum || message instanceof voteReferendum)
-        { return ;}
-        else if(message instanceof cProject) {
+        if(message instanceof cProject) {
 
             String tmpDir = fileSystem.getTempDir();
             String workingDir = tmpDir + "/"+ getSelf().path().name() + "/" + ((cProject) message).getProjectName();
