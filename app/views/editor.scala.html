@@ -14,18 +14,24 @@
     <body>
         <div class="container-fluid"><!-- Project view -->
             <div class="row">
-                <div class="col-sm-3 col-md-2 sidebar">
+                <div class="col-sm-3 col-md-2 sidebar" style="padding-top:10px;">
+
                     <div class="row">
-                        <h4>Project's Files</h4>
+                        <h4>Project's Operation</h4>
+                    </div>
+                    <div class="row text-center">
                         <button data-toggle="modal" data-target="#newFileModal" class="btn btn-info">
                             <i class="fa fa-plus"></i> Add File
                         </button>
-                        <button class="btn btn-success" onclick="compila();">
-                            <i class="fa fa-bolt"></i> Compile Project
+                        <button class="btn btn-warning" onclick="compila();">
+                            <i class="fa fa-bolt"></i> Compile
                         </button>
                     </div>
-                    <br>
-                    <ul id="filesList" style="margin-left:-25px;" class="list">
+                    <div class="row" style="padding-top:10px;">
+                        <h4>Project's Files</h4>
+                    </div>
+                    <div class="row">
+                        <ul id="filesList" style="margin-left:-25px;" class="list">
                         @for(f <- filesList) {
                             <div id="container-@f("id")">
                                 <li>
@@ -38,7 +44,15 @@
                                 </li>
                             </div>
                         }
-                    </ul>
+                        </ul>
+                    </div>
+
+                    <div class="row text-center" style="padding-top:30px;">
+                        <a id="download" class="btn btn-success faa-parent animated-hover">
+                            <i class="fa fa-download"></i> Download
+                        </a>
+                    </div>
+
                 </div>
                 <div class="container col-sm-10 col-sm-offset-2" id="editorColor">&nbsp;</div>
                 <div class="main container col-sm-10 col-sm-offset-2"><!-- Document view -->

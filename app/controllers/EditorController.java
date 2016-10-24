@@ -6,10 +6,12 @@ import akka.cluster.pubsub.DistributedPubSubMediator;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import messages.controllerMessage;
 import messages.referendumMessage;
+import play.api.Play;
 import play.data.DynamicForm;
 import play.data.Form;
 import play.mvc.Controller;
 import play.mvc.Result;
+import utils.fileSystem;
 import views.html.*;
 import utils.dbUtil;
 import java.util.ArrayList;
@@ -27,6 +29,11 @@ public class EditorController extends Controller {
 
     @Inject public EditorController(ActorSystem system) {
         projectActor  = DistributedPubSub.get(system).mediator();
+    }
+
+    public Result download(String project){
+        String publicFolder = Play.current().getFile("/public/executables").toString();
+        return ok(fileSystem.readBinary(publicFolder + "/" + project + "/" + project)).as("application/octet-stream");
     }
 
     // Create a new file

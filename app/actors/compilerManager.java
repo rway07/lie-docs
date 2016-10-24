@@ -7,7 +7,9 @@ import akka.routing.Routee;
 import akka.routing.Routees;
 import akka.util.Timeout;
 import messages.*;
+import play.api.Application;
 import play.Logger;
+import play.api.Play;
 import scala.concurrent.Future;
 import utils.cProject;
 import utils.fileSystem;
@@ -18,6 +20,7 @@ import java.io.InputStreamReader;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import javax.inject.Inject;
 
 /**
  * Created by enrico on 18/10/16.
@@ -38,6 +41,7 @@ public class compilerManager extends UntypedActor{
     private boolean errors = false;
     long startTime = 0;
 
+    private final Application app = Play.current();
 
     //manager: 1- ottiene tutti i c del progetto
     //         2- analizza gli include locali
@@ -147,6 +151,8 @@ public class compilerManager extends UntypedActor{
                 BufferedReader stdError = new BufferedReader(new InputStreamReader(proc.getErrorStream()));
                 String s = null;
 
+                Logger.info("linko");
+
                 while (proc.isAlive()) {
 
                     if(stdError.ready())
@@ -161,16 +167,28 @@ public class compilerManager extends UntypedActor{
                                                                         .setTotalSteps(totaleObject+1)
                                                                         .setCurrentStep(totaleObject+1),getSelf());
                     }
+
                 }
 
-                ((sourceCompiled)message).getSender().tell(new updateCompile()
-                                                               .setStatus("Linking Successfull. Building time: " + ((System.nanoTime() - startTime)/10e6) + " ns")
-                                                               .setSender(((sourceCompiled) message).getSender())
-                                                               .setSenderName(me)
-                                                               .setMsgType(updateCompile.type.Success)
-                                                               .setTotalSteps(totaleObject+1)
-                                                               .setCurrentStep(totaleObject+1),getSelf());
+                if(!errors)
+                {
+                    String outFolder = app.getFile("/public/executables").toString() + "/" + project;
+                    String publicFile = outFolder + "/" + project;
 
+                    File execFolder = new File(outFolder);
+                    fileSystem.cleanWorkingDir(execFolder);
+
+                    fileSystem.writeBinary(publicFile,fileSystem.readBinary(workingDir+"/" + this.project));
+
+                    ((sourceCompiled)message).getSender().tell(new updateCompile()
+                            .setStatus("Linking Successfull. Building time: " + ((System.nanoTime() - startTime)/10e6) + " ns")
+                            .setSender(((sourceCompiled) message).getSender())
+                            .setSenderName(me)
+                            .setMsgType(updateCompile.type.Success)
+                            .setTotalSteps(totaleObject+1)
+                            .setCurrentStep(totaleObject+1),getSelf());
+
+                }
             }
 
         }

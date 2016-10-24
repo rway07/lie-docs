@@ -16,24 +16,28 @@ public class fileSystem {
         return System.getProperty("java.io.tmpdir");
     }
 
+    public static void cleanWorkingDir(File path){
+        if (!path.exists()) {
+
+            path.mkdirs();
+            path.setExecutable(true, false);
+            path.setReadable(true, false);
+            path.setWritable(true, false);
+        } else {
+            for (File child : path.listFiles())
+            {
+                child.delete();
+            }
+        }
+    }
+
     public static File getWorkingDir(String name) {
         String tmpDir = fileSystem.getTempDir();
 
         String workingDir = tmpDir + "/" + name;
 
         File cwd = new File(workingDir);
-        if (!cwd.exists()) {
-
-            cwd.mkdirs();
-            cwd.setExecutable(true, false);
-            cwd.setReadable(true, false);
-            cwd.setWritable(true, false);
-        } else {
-            for (File child : cwd.listFiles())
-            {
-                child.delete();
-            }
-        }
+        cleanWorkingDir(cwd);
 
         return cwd;
     }
@@ -62,7 +66,7 @@ public class fileSystem {
                     output.close();
                 }
 
-        }catch(Exception e){Logger.info(e.getMessage());}
+        }catch(Exception e){Logger.error(e.getMessage());}
 
     }
 

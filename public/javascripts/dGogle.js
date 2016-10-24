@@ -17,6 +17,7 @@ function init(){
  window.viewFn = [];
  window.activeEditors =[];
 
+
  window.randomColor = function () {
      /*Colors
       #fc0202
@@ -540,14 +541,25 @@ function init(){
 
      }
 
+     if((param.msgType == "Success" && param.sender=="MANAGER"))
+     {
+         $("#download").attr("href","http://"+getLocation(window.location.href).host + "/compiled/" + $("#project").attr("_projectName")).show();
+     }
 
      $("#console").append(elem).fadeIn(1000);
- }
+ };
+
+ window.getLocation = function(href) {
+        var l = document.createElement("a");
+        l.href = href;
+        return l;
+ };
 
 };
 
 function compila()
 {
+    $("#downlaod").hide();
     $("#collapse1").collapse('show');
     $("#progressBar").css("width","0%");
     $("#console").find("p").each(function(idx,obj){$(obj).remove();});
@@ -557,13 +569,6 @@ function compila()
 $(document).ready(function(){
 
     init();
-
-    var getLocation = function(href) {
-        var l = document.createElement("a");
-        l.href = href;
-        return l;
-    };
-
 
     ws = new WebSocket('ws://'+getLocation(window.location.href).host+'/ws');
     stream = {
@@ -593,6 +598,8 @@ $(document).ready(function(){
 
   $("#editorColor").css("background-color",window.editorColor);
   $("#page").documentize(stream.send);
+  $("#download").hide();
+
 
     $('#collapse1').on('shown.bs.collapse', function () {
         $(".glyphicon").removeClass("glyphicon-collapse-down").addClass("glyphicon-collapse-up");
@@ -611,8 +618,7 @@ var exec = function(resp){
     var data = JSON.parse(resp.data);
     data.selfMessage = (data.editorID == window.editorID);
 
-    console.log("Server Say: ");
-    console.log(data)
+    console.log("Server Say: " + resp.data);
     switch(data.fn){
 
       case "execUpdatePosition":{
