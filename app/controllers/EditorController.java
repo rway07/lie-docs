@@ -1,6 +1,8 @@
 package controllers;
 
 
+import akka.cluster.pubsub.DistributedPubSub;
+import akka.cluster.pubsub.DistributedPubSubMediator;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import messages.controllerMessage;
 import messages.referendumMessage;
@@ -21,14 +23,11 @@ import javax.inject.*;
  */
 public class EditorController extends Controller {
 
-    final ActorSelection controllerActor;
+    final ActorRef projectActor;
 
     @Inject public EditorController(ActorSystem system) {
-        controllerActor  = system.actorSelection("akka://application/user/controllerActor");
+        projectActor  = DistributedPubSub.get(system).mediator();
     }
-
-
-
 
     // Create a new file
     public Result newFile() {
@@ -47,13 +46,13 @@ public class EditorController extends Controller {
 
             int id = (int)data.get(0).get("id");
 
-            controllerActor.tell(new controllerMessage()
+            projectActor.tell(new DistributedPubSubMediator.Publish(projectName,new controllerMessage()
                     .setAction(controllerMessage.actionEnum.ADD)
                     .setTarget(controllerMessage.targetEnum.FILE)
                     .setTargetID(id)
                     .setContainerName(projectName)
                     .setContainerID(projectID)
-                    .setTargetName(fileName),ActorRef.noSender());
+                    .setTargetName(fileName)),ActorRef.noSender());
 
             // Creating json node
             ObjectNode node = play.libs.Json.newObject();
@@ -77,7 +76,7 @@ public class EditorController extends Controller {
 
         HashMap f = (HashMap) (((ArrayList)dbUtil.query("select project from files where id = " + fileID)).get(0));
 
-        controllerActor.tell(new controllerMessage()
+        projectActor.tell(new DistributedPubSubMediator.Publish(project,new controllerMessage()
                 .setAction(controllerMessage.actionEnum.DELETE)
                 .setTarget(controllerMessage.targetEnum.FILE)
                 .setTargetID(fileID)
@@ -85,7 +84,7 @@ public class EditorController extends Controller {
                 .setRequireVote(true)
                 .setContainerName(project)
                 .setAuthor(author)
-                .setTargetName(file),ActorRef.noSender());
+                .setTargetName(file)),ActorRef.noSender());
 
         return ok("DONE");
     }
@@ -98,12 +97,12 @@ public class EditorController extends Controller {
         int result = dbUtil.executeUpdate("delete from files where id = " + fileID + ";");
 
         if (result != 0) {
-            controllerActor.tell(new controllerMessage()
+            projectActor.tell(new DistributedPubSubMediator.Publish(project,new controllerMessage()
                     .setAction(controllerMessage.actionEnum.DELETE)
                     .setTarget(controllerMessage.targetEnum.FILE)
                     .setTargetID(fileID)
                     .setContainerName(project)
-                    .setAck(true),ActorRef.noSender());
+                    .setAck(true)),ActorRef.noSender());
 
             return ok("DONE");
         } else {

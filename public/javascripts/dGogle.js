@@ -615,7 +615,6 @@ var exec = function(resp){
     console.log(data)
     switch(data.fn){
 
-
       case "execUpdatePosition":{
         if (data.author != window.editorID){
            var authorCaret = $("#" + data.author);
@@ -666,7 +665,6 @@ $.fn.focusEditable = function(col)
     var actualLength =  currTextNode.length;
     r.setStart(currTextNode, min(c,actualLength));
     r.setEnd(currTextNode, min(c,actualLength));
-    r.collapse(true);
     s.removeAllRanges();
     s.addRange(r);
     //currRow.get(0).focus();
