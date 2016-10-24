@@ -93,10 +93,18 @@ public class EditorController extends Controller {
     public Result execDelete(){
         DynamicForm form = Form.form().bindFromRequest();
         int fileID = Integer.parseInt(form.data().get("fileID"));
+        String project = form.data().get("project");
 
         int result = dbUtil.executeUpdate("delete from files where id = " + fileID + ";");
 
         if (result != 0) {
+            controllerActor.tell(new controllerMessage()
+                    .setAction(controllerMessage.actionEnum.DELETE)
+                    .setTarget(controllerMessage.targetEnum.FILE)
+                    .setTargetID(fileID)
+                    .setContainerName(project)
+                    .setAck(true),ActorRef.noSender());
+
             return ok("DONE");
         } else {
             return internalServerError("Errore during file deletion!");

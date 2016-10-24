@@ -121,17 +121,31 @@ public class editor extends UntypedActor {
                     }
                 } else if (((controllerMessage) message).getAction() == controllerMessage.actionEnum.DELETE){
                     if(((controllerMessage) message).getTarget() == controllerMessage.targetEnum.FILE){
-                        if(((controllerMessage) message).getContainerName().equals(project) && ((controllerMessage) message).getAuthor().equals(editorID) ){
+                        if(((controllerMessage) message).getContainerName().equals(project)){
+                            if(!(((controllerMessage) message).isAck()))
+                            {
+                                if(((controllerMessage) message).getAuthor().equals(editorID))
+                                {
+                                    Logger.debug("*************************************************************************");
+                                    Logger.info("RICHIESTO NUOVO REFERENDUM");
 
-                            Logger.debug("*************************************************************************");
-                            Logger.info("RICHIESTO NUOVO REFERENDUM");
+                                    referendumMessage ref = ((controllerMessage)message).toReferedumMessage();
+                                    ref.setSender(getSelf()).setForwarded(false).setAuthor(editorID);
+                                    Logger.info("AUTORE: " + ref.getAuthor());
+                                    router.tell(new DistributedPubSubMediator.Publish(this.project, ref),getSelf());
+                                }
+
+                            }else{
+                                Logger.warn("dico a tutti elimino file");
+                                jsonUtil ret = new jsonUtil("");
+                                ret.put("fn","removeFile");
+                                ret.put("fileID",((controllerMessage) message).getTargetID());
+                                socket.tell(ret.toString(),getSelf());
+                            }
 
 
-                            referendumMessage ref = ((controllerMessage)message).toReferedumMessage();
-                            ref.setSender(getSelf()).setForwarded(false).setAuthor(editorID);
-                            Logger.info("AUTORE: " + ref.getAuthor());
-                            router.tell(new DistributedPubSubMediator.Publish(this.project, ref),getSelf());
-                            return;
+
+
                         }
                     }else if(((controllerMessage) message).getTarget()== controllerMessage.targetEnum.PROJECT){
 

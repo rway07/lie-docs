@@ -19,6 +19,16 @@ public class controllerMessage implements Serializable {
     private String containerName;
     private String author;
     private boolean forwarded = false;
+    private boolean ack = false;
+
+    public boolean isAck() {
+        return ack;
+    }
+
+    public controllerMessage setAck(boolean ack) {
+        this.ack = ack;
+        return this;
+    }
 
     public referendumMessage toReferedumMessage(){
 

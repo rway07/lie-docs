@@ -430,11 +430,11 @@ function init(){
 
  window.viewFn['addFile'] = function(param){
      $("#filesList")
-         .append('<div id="container-' + param.fileID + '">' +
-             '<li><strong><a href="/project/' + param.projectID + '/' + param.fileID + '">' +
-             param.fileName + ' </a></strong><i id="' + param.fileID + '" onclick="fileDeleteEventListener();"' +
-             'class="remove_file fa fa-trash pull-right" style="cursor:pointer;"></i>' +
-             '</li></div>');
+         .append("<div id=\"container-" + param.fileID + "\">" +
+             "<li><strong><a href=\"/project/" + param.projectID + "/" + param.fileID + "\">" +
+             param.fileName + " </a></strong><i id=\"" + param.fileID + "\" onclick=\"fileDeleteEventListener('"+param.fileID+"','"+param.fileName+"');\"" +
+             "class=\"remove_file fa fa-trash pull-right\" style=\"cursor:pointer;\"></i>" +
+             "</li></div>");
  };
 
  window.getLocation = function(href){
@@ -480,6 +480,12 @@ function init(){
 
  };
 
+ window.viewFn['removeFile'] = function(param)
+ {
+     console.log("dentro remove file");
+     console.log(param)
+     $("#container-" + param.fileID).remove();
+ }
  window.viewFn['execVote'] = function(param){
 
      var modal = $("#emptyModal");
@@ -505,14 +511,17 @@ function init(){
                  $.ajax({
                      url: "/file/execDelete",
                      type: "POST",
-                     data: {"fileID":parseInt(modal.find("#fileID").attr("fileid"))},
+                     data: {"fileID":parseInt(modal.find("#fileID").attr("fileid")),
+                            "project":$("#project").attr("_projectname")},
                      error: function(data) {
                          console.log(data);
                          alert("Error removing the file!");
+                         modal.modal("hide");
                      },
                      success: function() {
 
-                         alert("File rimosso correttamente");
+                         modal.modal("hide");
+                         //alert("File rimosso correttamente");
 
                      }
                  });
