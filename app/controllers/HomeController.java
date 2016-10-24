@@ -28,28 +28,21 @@ public class HomeController extends Controller {
      * <code>GET</code> request with a path of <code>/</code>.
      */
 
-
-
-    @Inject
-    public HomeController(ActorSystem system) {
-        ActorSelection sel  = system.actorSelection("../*");
-        sel.tell("@@@@@@@@@@@@@@@@@@@@@@@@@@@Hello everybody",ActorRef.noSender());
-
-
-
-    }
-
     // Create a new project
     public Result newProject(String name) {
         String queryText = "insert into projects (name) values ('" + name + "');";
         int  result = dbUtil.executeUpdate(queryText);
 
         if (result != 0) {
+            ObjectNode node = play.libs.Json.newObject();
             ArrayList<HashMap<String, Object>> data = dbUtil.executeQuery("select max(id) as id from projects;");
             int id = (int)data.get(0).get("id");
+            node.put("projectID", id);
 
-            ObjectNode node = play.libs.Json.newObject();
-            node.put("id", id);
+            dbUtil.query("insert into files (`project`,`name`) values ("+id+",'main.c')");
+            data = dbUtil.executeQuery("select max(id) as id from files where project = " + id);
+            id = (int)data.get(0).get("id");
+            node.put("fileID", id);
 
             return ok(node);
         } else {

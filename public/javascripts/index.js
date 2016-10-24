@@ -16,7 +16,7 @@ $(document).ready(function() {
                     + data.statusText + "</h5></div>");
             },
             success: function (data) {
-                window.open('/project/' + data.id + '/edit', "_self");
+                window.open('/project/' + data.projectID + '/' + data.fileID, "_self");
             }
         });
     });

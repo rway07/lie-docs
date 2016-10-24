@@ -36,6 +36,8 @@ public class EditorController extends Controller {
         return ok(fileSystem.readBinary(publicFolder + "/" + project + "/" + project)).as("application/octet-stream");
     }
 
+
+
     // Create a new file
     public Result newFile() {
 

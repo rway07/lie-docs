@@ -375,7 +375,7 @@ function init(){
  };
 
  window.viewFn['init'] = function (param) {
-     $("#notice").notify({"duration":2000,"class":"info","html":"<i class='fa fa-info-circle'></i>Opening Document..."});
+     $("#notice").notify({"duration":1500,"class":"info","html":"<i class='fa fa-info-circle'></i>Opening Document..."});
      stream.send(JSON.stringify({"action":"open"}));
  };
  window.viewFn['join'] = function(param){
@@ -410,7 +410,7 @@ function init(){
 
       } else if(typeof param.controlMessage == "undefined")
       {
-          $("#notice").notify({"duration":2000,"class":"success","html":"<i class='fa fa-check-circle'></i>Editor LEAVE document..."});
+          $("#notice").notify({"duration":2000,"class":"info","html":"<i class='fa fa-info-circle'></i>Editor LEAVE document..."});
           $("#"+param.editorID).remove();
       }
 
@@ -423,7 +423,7 @@ function init(){
      }
      else if(param.editorID != window.editorID && typeof $("#" + param.editorID).get(0) == "undefined")
      {
-       $("#notice").notify({"duration":2000,"class":"success","html":"<i class='fa fa-info-circle'></i>Discovered editor already in document..."});
+       $("#notice").notify({"duration":2000,"class":"info","html":"<i class='fa fa-info-circle'></i>Discovering editor already in document..."});
        window.addCaret(0,0,null,param.editorID,param.editorColor);
      }
  };
@@ -565,7 +565,7 @@ function init(){
 
 function compila()
 {
-    $("#notice").notify({"duration":2000,"class":"success","html":"<i class='fa fa-check-circle'></i>Project compilation started..."});
+    $("#notice").notify({"duration":2000,"class":"info","html":"<i class='fa fa-info-circle'></i>Project compilation started..."});
     $("#downlaod").hide();
     $("#collapse1").collapse('show');
     $("#progressBar").css("width","0%");
