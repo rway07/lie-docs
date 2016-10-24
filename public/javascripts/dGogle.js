@@ -210,6 +210,7 @@ function init(){
 
  window.viewFn['open'] = function (param) {
 
+
      $(window.documentized).find("tr").each(function(idx,obj){
          $(obj).remove();
 
@@ -374,6 +375,7 @@ function init(){
  };
 
  window.viewFn['init'] = function (param) {
+     $("#notice").notify({"duration":2000,"class":"info","html":"<i class='fa fa-info-circle'></i>Opening Document..."});
      stream.send(JSON.stringify({"action":"open"}));
  };
  window.viewFn['join'] = function(param){
@@ -388,6 +390,8 @@ function init(){
      }
      else if(param.editorID != window.editorID && typeof param.project == "undefined") {
          var pingData = {"action": "ping", "editorID": window.editorID, "editorColor": window.editorColor};
+
+         $("#notice").notify({"duration":2000,"class":"success","html":"<i class='fa fa-check-circle'></i>New editor JOINED document..."});
 
          if (typeof $("#" + param.editorID).get(0) == "undefined")
              window.addCaret(0, 0, null, param.editorID, param.editorColor);
@@ -405,7 +409,11 @@ function init(){
             delete window.activeEditors[param.editorID];
 
       } else if(typeof param.controlMessage == "undefined")
-        $("#"+param.editorID).remove();
+      {
+          $("#notice").notify({"duration":2000,"class":"success","html":"<i class='fa fa-check-circle'></i>Editor LEAVE document..."});
+          $("#"+param.editorID).remove();
+      }
+
  };
 
  window.viewFn['ping'] = function(param){
@@ -415,11 +423,13 @@ function init(){
      }
      else if(param.editorID != window.editorID && typeof $("#" + param.editorID).get(0) == "undefined")
      {
+       $("#notice").notify({"duration":2000,"class":"success","html":"<i class='fa fa-info-circle'></i>Discovered editor already in document..."});
        window.addCaret(0,0,null,param.editorID,param.editorColor);
      }
  };
 
  window.viewFn['addFile'] = function(param){
+     $("#notice").notify({"duration":2000,"class":"success","html":"<i class='fa fa-check-circle'></i>New file added succefully..."});
      $("#filesList")
          .append("<div id=\"container-" + param.fileID + "\">" +
              "<li><strong><a href=\"/project/" + param.projectID + "/" + param.fileID + "\">" +
@@ -468,6 +478,7 @@ function init(){
 
  window.viewFn['removeFile'] = function(param)
  {
+     $("#notice").notify({"duration":2000,"class":"success","html":"<i class='fa fa-check-circle'></i>File removed successfully..."});
      $("#container-" + param.fileID).remove();
  }
  window.viewFn['execVote'] = function(param){
@@ -549,16 +560,12 @@ function init(){
      $("#console").append(elem).fadeIn(1000);
  };
 
- window.getLocation = function(href) {
-        var l = document.createElement("a");
-        l.href = href;
-        return l;
- };
 
 };
 
 function compila()
 {
+    $("#notice").notify({"duration":2000,"class":"success","html":"<i class='fa fa-check-circle'></i>Project compilation started..."});
     $("#downlaod").hide();
     $("#collapse1").collapse('show');
     $("#progressBar").css("width","0%");
@@ -959,6 +966,17 @@ $.fn.indices = function(currTr,action,func,prev,next) {
    return JSON.stringify(func);
 
  };
+
+$.fn.notify = function(param)
+{
+    param["who"]=this;
+
+    $(this).removeClass($(this).attr("class")).addClass("col-md-8 col-md-offset-3 fixedDialog alert alert-" + param.class)
+    $(this).html(param.html);
+    $(this).slideDown();
+
+    setTimeout(function(param){ $(param.who).slideUp(); },param.duration,param);
+};
 
 $.fn.documentize = function(callBackChange){
 

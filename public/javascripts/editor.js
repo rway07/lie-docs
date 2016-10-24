@@ -48,7 +48,28 @@ window.fileDeleteEventListener= function(fileID,fileName) {
         if(active > 0)
           modal.find("#success").hide();
         else
-            modal.find("#success").show();
+        {
+            modal.find("#success").on("click",function(){
+
+                $.ajax({
+                    url: "/file/execDelete",
+                    type: "POST",
+                    data: {"fileID":parseInt(modal.find("#fileID").attr("fileid")),
+                        "project":$("#project").attr("_projectname")},
+                    error: function(data) {
+                        alert("Error removing the file!");
+                        modal.modal("hide");
+                    },
+                    success: function() {
+
+                        modal.modal("toggle");
+                        //alert("File rimosso correttamente");
+
+                    }
+                });
+
+            }).show();
+        }
 
         modal.find("#success").text("Proceed Delete");
         modal.find("#fileID").attr("fileID", fileID);
