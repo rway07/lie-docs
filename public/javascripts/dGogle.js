@@ -4,8 +4,6 @@ var stream = null;
 
 function init(){
 
-    console.log("onload window");
-
     window.onbeforeunload = function (e) {
          stream.bye();
     };
@@ -108,9 +106,6 @@ function init(){
  {
    var currRow = $('tr:eq('+(parseInt(row))+')').get(0);
    var domTD = $(currRow).children("td").get(0);
-   if(typeof domTD == "undefined")
-     console.log("ti ho beccato");
-     
    var text = document.createTextNode("");
    domTD.appendChild(text);
 
@@ -378,20 +373,17 @@ function init(){
  };
 
  window.viewFn['init'] = function (param) {
-     console.log("ricevuto init ack, invio open");
      stream.send(JSON.stringify({"action":"open"}));
  };
  window.viewFn['join'] = function(param){
 
      if(param.editorID != window.editorID && typeof param.controlMessage != "undefined")
      {
-         console.log("CONTROL: JOIN project");
          if(param.editorID != window.editorID)
            window.activeEditors[param.editorID]=1;
 
          var pingData = {"forward":true,"controlMessage":"","fn":"ping","action": "ping", "editorID": window.editorID, "editorColor": window.editorColor};
          stream.send(JSON.stringify(pingData));
-         console.log("PROJECT JOIN:"+Object.keys(window.activeEditors).length);
      }
      else if(param.editorID != window.editorID && typeof param.project == "undefined") {
          var pingData = {"action": "ping", "editorID": window.editorID, "editorColor": window.editorColor};
@@ -408,7 +400,6 @@ function init(){
  window.viewFn['leave'] = function(param){
 
       if(typeof param.controlMessage != "undefined") {
-          console.log("CONTROL: LEAVE project");
           if(param.editorID != window.editorID)
             delete window.activeEditors[param.editorID];
 
@@ -418,7 +409,6 @@ function init(){
 
  window.viewFn['ping'] = function(param){
      if(typeof param.controlMessage != "undefined"){
-         console.log("CONTROL: PING project");
          if(param.editorID != window.editorID)
            window.activeEditors[param.editorID]=1;
      }
@@ -446,9 +436,6 @@ function init(){
 
  window.viewFn['execReferendum'] = function(param){
 
-     console.log("referendum");
-     console.log(param);
-
 
      var modal = $("#emptyModal");
      modal.find("#modalTitle").text("Delete Referendum");
@@ -462,13 +449,11 @@ function init(){
      var vote ={"sender":param.sender,"fn":"execVote","action":"vote"};
 
      modal.find("#success").text("Agree").show().on('click',function(){
-         console.log("votato: yes");
          vote["vote"] = 1;
          stream.send(JSON.stringify(vote))
          modal.modal('toggle');
      });
      modal.find("#fail").text("Not Agree").show().on('click',function(){
-         console.log("votato: no");
          vote["vote"]=0;
          stream.send(JSON.stringify(vote))
          modal.modal('toggle');
@@ -482,8 +467,6 @@ function init(){
 
  window.viewFn['removeFile'] = function(param)
  {
-     console.log("dentro remove file");
-     console.log(param)
      $("#container-" + param.fileID).remove();
  }
  window.viewFn['execVote'] = function(param){
@@ -500,27 +483,24 @@ function init(){
 
      if(parseInt(parseInt(modal.find("#acceptReferendum").text()) + parseInt(modal.find("#discardReferendum").text())) == Object.keys(window.activeEditors).length)
      {
-         console.log("quorum: " + parseInt(modal.find("#qourum").text()));
          modal.find("#spinner").hide();
          if(parseInt(modal.find("#acceptReferendum").text())>= parseInt(modal.find("#quorum").text()))
          {
              modal.find("#refResult").append("<p><i class=\"fa-2x fa fa-check\" aria-hidden=\"true\"></i> Referndum Closed: ACCEPTED</p><p>Your request was accepted by other editors. If you wish you can continue with the deletion procedure</p>")
              modal.find("#success").on("click",function(){
 
-                 console.log("sono qui e cancello il file: " + parseInt(modal.find("fileID").attr("fileID")));
                  $.ajax({
                      url: "/file/execDelete",
                      type: "POST",
                      data: {"fileID":parseInt(modal.find("#fileID").attr("fileid")),
                             "project":$("#project").attr("_projectname")},
                      error: function(data) {
-                         console.log(data);
                          alert("Error removing the file!");
                          modal.modal("hide");
                      },
                      success: function() {
 
-                         modal.modal("hide");
+                         modal.modal("toggle");
                          //alert("File rimosso correttamente");
 
                      }
@@ -537,8 +517,6 @@ function init(){
 
      }
 
-
-     console.log(param);
  };
 
  window.viewFn['console'] = function(param){
@@ -557,8 +535,6 @@ function init(){
      if(param.msgType == "Progress" || (param.msgType == "Success" && param.sender=="MANAGER"))
      {
          var val = parseInt((parseInt(param.currentStep) / parseInt(param.totalSteps))*100);
-         console.log(val);
-
          $("#progressBar").css("width",val+"%");
 
 
@@ -651,9 +627,6 @@ var exec = function(resp){
         break;
       }
       default:{
-
-            console.log("dentro: ");
-            console.log(data);
             window.removeVirtualCaret(data.editorID,data.fn);
             window.normalizeTextNode(data.r);
             window.viewFn[data.fn](data);
@@ -946,7 +919,6 @@ $.fn.fn = function(e,notifyChange){
 
 $.fn.streamChar = function(e, notifyChange)
 {
-    console.log("KeyPress: " + e.keyCode);
     if (((e.keyCode >= 32) && (e.keyCode <= 126)) || ((e.keyCode >= 192) && (e.keyCode <= 242)))
     //if(e.type=="keypress" && e.which !== 0 && !e.ctrlKey && !e.metaKey && !e.altKey)
     {
