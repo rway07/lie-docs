@@ -14,15 +14,17 @@
                 </a>
             </div>
             <div class="collapse navbar-collapse" id="app-navbar-collapse">
-                <ul class="nav navbar-nav">
-                    <li><a href="/">Home</a></li>
-                </ul>
-                <ul class="nav navbar-nav">
-                    <li><a href="#">About</a></li>
-                </ul>
-
-                <ul style="position: relative; margin-left: 30%;" class="nav navbar-nav" id="activeFile"><li><a style="cursor:default;color:white;" href="#">@projectName/@fileName</a></li></ul>
-
+                <div class="row">
+                    <div class="col-sm-3 col-md-2">
+                        <ul class="nav navbar-nav">
+                            <li><a href="/">Home</a></li>
+                            <li><a href="#">About</a></li>
+                        </ul>
+                    </div>
+                    <div style="color:white;" class="col-sm-13 col-md-8 text-center">
+                        <h4 style="padding:15px; margin:0px;">@projectName/@fileName</h4>
+                    </div>
+                </div>
             </div>
 
         </div>
