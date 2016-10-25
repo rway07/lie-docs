@@ -181,7 +181,7 @@ public class compilerManager extends UntypedActor{
                     fileSystem.writeBinary(publicFile,fileSystem.readBinary(workingDir+"/" + this.project));
 
                     ((sourceCompiled)message).getSender().tell(new updateCompile()
-                            .setStatus("Linking Successfull. Building time: " + ((System.nanoTime() - startTime)/10e6) + " ms")
+                            .setStatus("Linking Successfull. Building time: " + ((System.currentTimeMillis()- startTime)) + " ms")
                             .setSender(((sourceCompiled) message).getSender())
                             .setSenderName(me)
                             .setMsgType(updateCompile.type.Success)
@@ -194,7 +194,7 @@ public class compilerManager extends UntypedActor{
         }
         else if(message instanceof compileMessage)
         {
-            startTime = System.nanoTime();
+            startTime = System.currentTimeMillis();
             workerRouter.tell(akka.routing.GetRoutees.getInstance(),getSelf());
             db.tell(message,getSelf());
         }else if( message instanceof updateCompile)
