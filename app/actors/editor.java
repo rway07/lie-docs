@@ -46,11 +46,25 @@ public class editor extends UntypedActor {
 
         this.router =  DistributedPubSub.get(system).mediator();
         this.socket = out;
+
     }
 
     @Override
     public void onReceive(Object message) {
-            if(message instanceof updateReferendum) {
+
+            if(message instanceof deleteProject)
+            {
+                jsonUtil ret = new jsonUtil("");
+                ret.put("fn","notify");
+                ret.put("action","redirect");
+                ret.put("duration",10000);
+                ret.put("html","<i class=\"fa fa-exclamation-triangle fa-3x\"></i><div style=\"display: inline; margin-left: 5px; position: relative; top: -10px;\">This project is marked as post delayed. Will be deleted on logout! All changes will be lost. You will be redirect to the home in 10 secs</div>");
+                ret.put("class","danger");
+
+                socket.tell(ret.toString(),getSelf());
+                return;
+            }
+            else if(message instanceof updateReferendum) {
                 jsonUtil ret = new jsonUtil("");
                 ret.put("fn","execVote");
                 ret.put("value",((updateReferendum) message).getValue());
@@ -196,7 +210,7 @@ public class editor extends UntypedActor {
                                     @Override
                                     public void onComplete(Throwable excp, ActorRef child) throws Throwable {
                                         if (excp != null) {
-                                            db = system.actorOf(dbActor.props(),"DB"+project);
+                                            db = system.actorOf(Props.create(dbActor.class,router),"DB"+project);
                                         } else {
                                             db = child;
                                         }

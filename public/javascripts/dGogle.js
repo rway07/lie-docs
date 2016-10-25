@@ -531,6 +531,13 @@ function init(){
 
  };
 
+ window.viewFn['notify'] = function(param){
+     $("#notice").notify(param);
+     if(param.action == "redirect"){
+         setTimeout(function(){window.location ="http://" + getLocation(window.location).host},param.duration);
+     }
+ }
+
  window.viewFn['console'] = function(param){
 
 
@@ -967,16 +974,7 @@ $.fn.indices = function(currTr,action,func,prev,next) {
 
  };
 
-$.fn.notify = function(param)
-{
-    param["who"]=this;
 
-    $(this).removeClass($(this).attr("class")).addClass("col-md-8 col-md-offset-3 fixedDialog alert alert-" + param.class)
-    $(this).html(param.html);
-    $(this).slideDown();
-
-    setTimeout(function(param){ $(param.who).slideUp(); },param.duration,param);
-};
 
 $.fn.documentize = function(callBackChange){
 

@@ -1,9 +1,15 @@
 package actors;
 
+import akka.actor.ActorRef;
 import akka.actor.Props;
 import akka.actor.UntypedActor;
+import akka.cluster.pubsub.DistributedPubSubMediator;
+import akka.dispatch.sysmsg.Terminate;
 import messages.compileMessage;
+import messages.deleteProject;
+import play.Logger;
 import utils.cProject;
+import utils.dbUtil;
 import utils.jsonUtil;
 import model.*;
 
@@ -22,12 +28,37 @@ public class dbActor extends UntypedActor {
     }
     private boolean initialized = false;
     private editorModel db = null;
+    private ActorRef roomRouter= null;
+    private HashMap<Integer,deleteProject> deleteDelayed = new HashMap<Integer,deleteProject>();
 
+    public dbActor(ActorRef router)
+    {
+        roomRouter = router;
+    }
+
+    @Override
+    public void postStop()
+    {
+        Logger.error("DB ACTOR : TERMINATED");
+        Iterator idp = deleteDelayed.keySet().iterator();
+
+        while(idp.hasNext())
+            dbUtil.query("delete from projects where id = " + idp.next());
+
+        return;
+    }
 
     @Override
     public void onReceive(Object msg) {
 
-        if(msg instanceof compileMessage)
+        if(msg instanceof deleteProject)
+        {
+            deleteDelayed.put(((deleteProject)msg).getId(),((deleteProject)msg));
+            roomRouter.tell(new DistributedPubSubMediator.Publish(((deleteProject)msg).getProject(),msg),getSelf());
+            context().stop(getSelf());
+            return;
+        }
+        else if(msg instanceof compileMessage)
         {
             cProject p = new cProject();
             p = new cProject();

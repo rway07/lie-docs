@@ -6,6 +6,12 @@
   tr{min-height:5px; width:100%;}
   td{width:100%;}
 
+  .disabled div{
+    background-color: darkgrey;
+    text-decoration: line-through;
+    cursor: default;
+  }
+
   .fixedDialog{
     position: fixed;
     left: 0px;

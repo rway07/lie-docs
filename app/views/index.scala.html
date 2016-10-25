@@ -5,6 +5,7 @@
 @navbar.index()
 @modals.new_project()
     <div class="col-sm-12">
+        @notice.notice();
         <div id="errordiv">
 
         </div>
@@ -21,7 +22,7 @@
                             <div class="panel-heading">
                                 <i id="@p("project").asInstanceOf[HashMap[String, Object]]("id")"
                                     class="remove_me fa fa-trash-o fa-2x pull-right" aria-hidden="true"></i>
-                                <h3>
+                                <h3 style="display:inline;">
                                     @p("project").asInstanceOf[HashMap[String, Object]]("name")
                                 </h3>
                             </div>
