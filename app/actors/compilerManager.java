@@ -181,7 +181,7 @@ public class compilerManager extends UntypedActor{
                     fileSystem.writeBinary(publicFile,fileSystem.readBinary(workingDir+"/" + this.project));
 
                     ((sourceCompiled)message).getSender().tell(new updateCompile()
-                            .setStatus("Linking Successfull. Building time: " + ((System.nanoTime() - startTime)/10e6) + " ns")
+                            .setStatus("Linking Successfull. Building time: " + ((System.nanoTime() - startTime)/10e6) + " ms")
                             .setSender(((sourceCompiled) message).getSender())
                             .setSenderName(me)
                             .setMsgType(updateCompile.type.Success)
