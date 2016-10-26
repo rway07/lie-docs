@@ -35,11 +35,12 @@ public class dbActor extends UntypedActor {
     {
         roomRouter = router;
     }
+    private long messages = 0;
 
     @Override
     public void postStop()
     {
-        Logger.error("DB ACTOR : TERMINATED");
+
         Iterator idp = deleteDelayed.keySet().iterator();
 
         while(idp.hasNext())
@@ -53,7 +54,6 @@ public class dbActor extends UntypedActor {
 
         if(msg instanceof deleteProject)
         {
-            Logger.info("MI UCCIDO");
             deleteDelayed.put(((deleteProject)msg).getId(),((deleteProject)msg));
             roomRouter.tell(new DistributedPubSubMediator.Publish(((deleteProject)msg).getProject(),msg),getSelf());
             context().stop(getSelf());
@@ -61,7 +61,7 @@ public class dbActor extends UntypedActor {
         }
         else if(msg instanceof compileMessage)
         {
-            Logger.error("DB: RETRIVE PROJECT");
+
             cProject p = new cProject();
             p = new cProject();
 
@@ -84,9 +84,10 @@ public class dbActor extends UntypedActor {
             ((compileMessage) msg).setCProject(p);
             getSender().tell(msg,getSelf());
 
-            Logger.error("DB: PROJECT RETRIVED");
             return;
         }
+
+        long starTime = System.currentTimeMillis();
 
         jsonUtil m = new jsonUtil((String)msg);
         jsonUtil resp = new jsonUtil("");
@@ -161,6 +162,7 @@ public class dbActor extends UntypedActor {
 
             }
         }
+        Logger.debug("dbActor Time: " + (System.currentTimeMillis() - starTime) + " messages: " + ++messages);
         getSender().tell(resp.toString(),getSelf());
     }
 

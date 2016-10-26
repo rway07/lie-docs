@@ -33,7 +33,6 @@ public class editor extends UntypedActor {
     private String editorID;
     private String editorColor;
     private ActorRef compilerManager = null;
-    private ActorRef broadCaster = null;
 
     LoggingAdapter log = Logging.getLogger(getContext().system(), this);
 
@@ -77,7 +76,6 @@ public class editor extends UntypedActor {
                 jsonUtil ret = new jsonUtil("");
                 ret.put("fn","execVote");
                 ret.put("value",((updateReferendum) message).getValue());
-                Logger.error("-> SOCKET: " + ((controllerMessage) message).toString());
                 socket.tell(ret.toString(),getSelf());
                 return;
 
@@ -98,7 +96,6 @@ public class editor extends UntypedActor {
                             ref.put("sender",msg.getSender().path().toString());
 
                             ref.put("fn", "execReferendum");
-                            Logger.error("-> SOCKET: " + ((controllerMessage) message).toString());
                             socket.tell(ref.toString(), getSelf());
                             return;
                         }
@@ -115,7 +112,6 @@ public class editor extends UntypedActor {
                             ret.put("fileName",((controllerMessage) message).getTargetName());
                             ret.put("fileID",((controllerMessage) message).getTargetID());
                             ret.put("projectID",((controllerMessage) message).getContainerID());
-                            Logger.error("-> SOCKET: " + ((controllerMessage) message).toString());
                             socket.tell(ret.toString(),getSelf());
                         }
                         return ;
@@ -140,7 +136,6 @@ public class editor extends UntypedActor {
                                 jsonUtil ret = new jsonUtil("");
                                 ret.put("fn","removeFile");
                                 ret.put("fileID",((controllerMessage) message).getTargetID());
-                                Logger.error("-> SOCKET: " + ((controllerMessage) message).toString());
                                 socket.tell(ret.toString(),getSelf());
                                 return;
                             }
@@ -155,7 +150,6 @@ public class editor extends UntypedActor {
                 }
             }
             else if( message instanceof updateCompile){
-               Logger.error("-> SOCKET: " + ((updateCompile) message).toString());
                socket.tell(((updateCompile) message).toString(),getSelf());
             }
             else if (message instanceof DistributedPubSubMediator.SubscribeAck && ((DistributedPubSubMediator.SubscribeAck) message).subscribe().topic().equals(room)){
@@ -174,7 +168,6 @@ public class editor extends UntypedActor {
                 router.tell(new DistributedPubSubMediator.Publish(project, msg.toString()),getSelf());
             }
             else if (message instanceof documentChanges){
-                Logger.error("-> SOCKET: " + ((documentChanges) message).getMsg().toString());
 
                 jsonUtil m = new jsonUtil((String)((documentChanges) message).getMsg());
 
@@ -333,7 +326,6 @@ public class editor extends UntypedActor {
                         switch ((String) jsonMsg.get("action")) {
                             //editor's view function helper
                             case "compile":{
-                                Logger.error("EDITOR: RICEVUTO COMPILO");
                                 compilerManager.tell(new compileMessage().setSender(getSelf()).setProject(project),getSelf());
                                 break;
                             }
@@ -353,7 +345,6 @@ public class editor extends UntypedActor {
                                 f.onSuccess(new OnSuccess<String>(){
                                     public void onSuccess(String result) {
 
-                                        Logger.error("-> SOCKET: " + (result).toString());
                                         socket.tell((Object)result,getSelf());
                                     }
                                 },system.dispatcher());

@@ -151,8 +151,6 @@ public class compilerManager extends UntypedActor{
                 BufferedReader stdError = new BufferedReader(new InputStreamReader(proc.getErrorStream()));
                 String s = null;
 
-                Logger.info("linko");
-
                 while (proc.isAlive()) {
 
                     if(stdError.ready())
@@ -190,13 +188,11 @@ public class compilerManager extends UntypedActor{
 
                 }
 
-                Logger.error("MANAGER: LINKIING FINITO");
             }
 
         }
         else if(message instanceof compileMessage)
         {
-            Logger.error("MANAGER: RICEVUTO COMPILO");
             startTime = System.currentTimeMillis();
             workerRouter.tell(akka.routing.GetRoutees.getInstance(),getSelf());
             db.tell(message,getSelf());
