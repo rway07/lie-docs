@@ -9,5 +9,6 @@ $.fn.notify = function(param)
     $(this).html(param.html);
     $(this).slideDown();
 
-    setTimeout(function(param){ $(param.who).slideUp(); },param.duration,param);
+    if(param.duration > 0)
+      setTimeout(function(param){ $(param.who).slideUp(); },param.duration,param);
 };

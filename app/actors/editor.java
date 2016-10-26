@@ -24,7 +24,7 @@ public class editor extends UntypedActor {
     private final ActorSystem system = getContext().system();
 
     private final ActorRef socket;
-    private final ActorRef router;
+    private ActorRef router;
     private ActorRef db;
 
     private String room;
@@ -50,6 +50,15 @@ public class editor extends UntypedActor {
     }
 
     @Override
+    public void preStart(){
+
+        if(router.isTerminated())
+            router = DistributedPubSub.get(system).mediator();
+
+    }
+
+
+    @Override
     public void onReceive(Object message) {
 
             if(message instanceof deleteProject)
@@ -68,8 +77,9 @@ public class editor extends UntypedActor {
                 jsonUtil ret = new jsonUtil("");
                 ret.put("fn","execVote");
                 ret.put("value",((updateReferendum) message).getValue());
-
+                Logger.error("-> SOCKET: " + ((controllerMessage) message).toString());
                 socket.tell(ret.toString(),getSelf());
+                return;
 
             }
             else if(message instanceof referendumMessage  && !(((referendumMessage) message).getAuthor().equals(editorID))){
@@ -88,7 +98,9 @@ public class editor extends UntypedActor {
                             ref.put("sender",msg.getSender().path().toString());
 
                             ref.put("fn", "execReferendum");
+                            Logger.error("-> SOCKET: " + ((controllerMessage) message).toString());
                             socket.tell(ref.toString(), getSelf());
+                            return;
                         }
                     }
             }else if(message instanceof referendumMessage && ((referendumMessage) message).getAuthor().equals(editorID)) {
@@ -103,6 +115,7 @@ public class editor extends UntypedActor {
                             ret.put("fileName",((controllerMessage) message).getTargetName());
                             ret.put("fileID",((controllerMessage) message).getTargetID());
                             ret.put("projectID",((controllerMessage) message).getContainerID());
+                            Logger.error("-> SOCKET: " + ((controllerMessage) message).toString());
                             socket.tell(ret.toString(),getSelf());
                         }
                         return ;
@@ -119,14 +132,17 @@ public class editor extends UntypedActor {
                                 {
                                     referendumMessage ref = ((controllerMessage)message).toReferedumMessage();
                                     ref.setSender(getSelf()).setForwarded(false).setAuthor(editorID);
-                                    router.tell(new DistributedPubSubMediator.Publish(this.project, ref),getSelf());
+                                    router.tell(new DistributedPubSubMediator.Publish(project, ref),getSelf());
+                                    return;
                                 }
 
                             }else{
                                 jsonUtil ret = new jsonUtil("");
                                 ret.put("fn","removeFile");
                                 ret.put("fileID",((controllerMessage) message).getTargetID());
+                                Logger.error("-> SOCKET: " + ((controllerMessage) message).toString());
                                 socket.tell(ret.toString(),getSelf());
+                                return;
                             }
 
 
@@ -134,35 +150,47 @@ public class editor extends UntypedActor {
 
                         }
                     }else if(((controllerMessage) message).getTarget()== controllerMessage.targetEnum.PROJECT){
-
+                        return;
                     }
                 }
             }
             else if( message instanceof updateCompile){
+               Logger.error("-> SOCKET: " + ((updateCompile) message).toString());
                socket.tell(((updateCompile) message).toString(),getSelf());
             }
             else if (message instanceof DistributedPubSubMediator.SubscribeAck && ((DistributedPubSubMediator.SubscribeAck) message).subscribe().topic().equals(room)){
-                jsonUtil msg = new jsonUtil("");
-                msg.put("fn","join");
-                msg.put("editorID",this.editorID);
-                msg.put("editorColor",this.editorColor);
-                msg.put("action","join");
-                msg.put("ack","");
-                router.tell(new DistributedPubSubMediator.Publish(this.room, msg.toString()),getSelf());
+                return;
 
             } else if (message instanceof DistributedPubSubMediator.SubscribeAck && ((DistributedPubSubMediator.SubscribeAck) message).subscribe().topic().equals(project)) {
-
                 jsonUtil msg = new jsonUtil("");
                 msg.put("fn","join");
                 msg.put("editorID",this.editorID);
                 msg.put("editorColor",this.editorColor);
                 msg.put("action","join");
                 msg.put("ack","");
-                msg.put("controlMessage","");
+                msg.put("project", project);
+                msg.put("file",file);
+                msg.put("room",project + " " + file);
                 router.tell(new DistributedPubSubMediator.Publish(project, msg.toString()),getSelf());
             }
             else if (message instanceof documentChanges){
+                Logger.error("-> SOCKET: " + ((documentChanges) message).getMsg().toString());
+
+                jsonUtil m = new jsonUtil((String)((documentChanges) message).getMsg());
+
+                if(m.get("fn").equals("ping") || m.get("fn").equals("leave"))
+                {
+                    if(!m.get("editorID").equals(editorID))
+                    {
+                        socket.tell(((documentChanges)message).getMsg(),self());
+                    }
+                    return;
+                }
+
+                //document changes
                 socket.tell(((documentChanges)message).getMsg(),self());
+
+
             }else if (message instanceof String) {
 
 
@@ -174,7 +202,7 @@ public class editor extends UntypedActor {
                 if((String)jsonMsg.get("controlMessage") != null) // project control message ( generated only join, leave, ping)
                 {
 
-                    if(jsonMsg.get("forward") == null)
+                    if(jsonMsg.get("forward") == null && !jsonMsg.get("room").equals(room))
                     {
                         //Logger.debug("-> CONTROL -> SOCKET : " + jsonMsg.get("fn"));
                         socket.tell(message,getSelf());
@@ -237,6 +265,7 @@ public class editor extends UntypedActor {
                                         db.tell(initMsg.toString(),getSelf());
                                         editorID = (String)jsonMsg.get("editorID");
                                         router.tell(new DistributedPubSubMediator.Subscribe(room, getSelf()), getSelf());
+
                                         router.tell(new DistributedPubSubMediator.Subscribe(project, getSelf()), getSelf());
                                     }
                                 }, system.dispatcher());
@@ -245,15 +274,18 @@ public class editor extends UntypedActor {
 
                                 break;
                             }
-                            else if(!this.editorID.equals((String)jsonMsg.get("editorID")))
+                            else
+
+                            if(!this.editorID.equals((String)jsonMsg.get("editorID")))
                             {
+
                                 jsonUtil join = new jsonUtil("");
                                 join.put("editorID",jsonMsg.get("editorID"));
                                 join.put("editorColor",jsonMsg.get("editorColor"));
                                 join.put("fn","join");
-
-                                 socket.tell(join.toString(),self());
-
+                                join.put("project",project);
+                                join.put("file",file);
+                                socket.tell(join.toString(),self());
 
                             }
                             break;
@@ -265,10 +297,11 @@ public class editor extends UntypedActor {
                             jsonUtil msg = new jsonUtil("");
                             msg.put("fn","leave");
                             msg.put("editorID",this.editorID);
-                            router.tell(new DistributedPubSubMediator.Publish(this.room, new documentChanges(msg.toString())),getSelf());
-                            msg.put("controlMessage","");
-                            router.tell(new DistributedPubSubMediator.Publish(project, msg.toString()),getSelf());
+                            msg.put("project",project);
+                            msg.put("file",file);
+                            router.tell(new DistributedPubSubMediator.Publish(project, new documentChanges(msg.toString())),getSelf());
                             router.tell(new DistributedPubSubMediator.Unsubscribe(room,getSelf()), getSelf());
+                            router.tell(new DistributedPubSubMediator.Unsubscribe(project,getSelf()), getSelf());
                             break;
                         }
                         case "ping":
@@ -278,9 +311,9 @@ public class editor extends UntypedActor {
                             msg.put("fn","ping");
                             msg.put("editorID",this.editorID);
                             msg.put("editorColor",this.editorColor);
-                            router.tell(new DistributedPubSubMediator.Publish(this.room, new documentChanges(msg.toString())),getSelf());
-                            msg.put("controlMessage","");
-                            router.tell(new DistributedPubSubMediator.Publish(project, msg.toString()),getSelf());
+                            msg.put("project",project);
+                            msg.put("file",file);
+                            router.tell(new DistributedPubSubMediator.Publish(project, new documentChanges(msg.toString())),getSelf());
                             break;
 
                         }
@@ -300,26 +333,30 @@ public class editor extends UntypedActor {
                         switch ((String) jsonMsg.get("action")) {
                             //editor's view function helper
                             case "compile":{
+                                Logger.error("EDITOR: RICEVUTO COMPILO");
                                 compilerManager.tell(new compileMessage().setSender(getSelf()).setProject(project),getSelf());
                                 break;
                             }
                             case "vote":{
                                 ActorSelection referendumOwner = getContext().system().actorSelection(jsonMsg.get("sender").toString());
                                 referendumOwner.tell(new updateReferendum().setObject(updateReferendum.enumObject.RANK).setValue(jsonMsg.get("vote")),getSelf());
+                                return;
                             }
                             case "open": {
                                 //read all documents line
                                 //build command for actorDB
-                            jsonUtil openCmd = new jsonUtil("");
-                            openCmd.put("action","open");
-                            openCmd.put("file",file);
-                            f = ask(db,(Object)openCmd.toString(),1000);
-                            f.onSuccess(new OnSuccess<String>(){
-                                public void onSuccess(String result) {
 
-                                    socket.tell((Object)result,getSelf());
-                                }
-                            },system.dispatcher());
+                                jsonUtil openCmd = new jsonUtil("");
+                                openCmd.put("action","open");
+                                openCmd.put("file",file);
+                                f = ask(db,(Object)openCmd.toString(),1000);
+                                f.onSuccess(new OnSuccess<String>(){
+                                    public void onSuccess(String result) {
+
+                                        Logger.error("-> SOCKET: " + (result).toString());
+                                        socket.tell((Object)result,getSelf());
+                                    }
+                                },system.dispatcher());
                                 return;
                             }
 

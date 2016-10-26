@@ -10,7 +10,7 @@ function init(){
 
  window.row=0;
  window.col=0;
- window.editorID = String.prototype.makeid(128);
+ window.editorID = String.prototype.makeid(10);
  window.restoreCaret =[];
  window.caret = "<div class=\"caret\"></div>";
  window.elementRow = "<tr><td contenteditable=\"true\"></td></tr>";
@@ -380,51 +380,62 @@ function init(){
  };
  window.viewFn['join'] = function(param){
 
-     if(param.editorID != window.editorID && typeof param.controlMessage != "undefined")
+     if(param.editorID != window.editorID)
+         window.activeEditors[param.editorID]=1;
+
+     var project = $("#project").attr("_projectName");
+     var file = $("#file").attr("_fileName");
+     var pingData = {"project": project,
+                     "file": file,
+                     "action": "ping",
+                     "editorID": window.editorID,
+                     "editorColor": window.editorColor};
+
+     if(param.project == project && param.file==file)
      {
-         if(param.editorID != window.editorID)
-           window.activeEditors[param.editorID]=1;
-
-         var pingData = {"forward":true,"controlMessage":"","fn":"ping","action": "ping", "editorID": window.editorID, "editorColor": window.editorColor};
-         stream.send(JSON.stringify(pingData));
-     }
-     else if(param.editorID != window.editorID && typeof param.project == "undefined") {
-         var pingData = {"action": "ping", "editorID": window.editorID, "editorColor": window.editorColor};
-
-         $("#notice").notify({"duration":2000,"class":"success","html":"<i class='fa fa-check-circle'></i>New editor JOINED document..."});
-
          if (typeof $("#" + param.editorID).get(0) == "undefined")
+         {
+             $("#notice").notify({"duration":2000,"class":"success","html":"<i class='fa fa-check-circle'></i>New editor JOINED document..."});
              window.addCaret(0, 0, null, param.editorID, param.editorColor);
+         }
 
-         stream.send(JSON.stringify(pingData));
      }
 
+     stream.send(JSON.stringify(pingData));
 
  };
 
  window.viewFn['leave'] = function(param){
 
-      if(typeof param.controlMessage != "undefined") {
-          if(param.editorID != window.editorID)
-            delete window.activeEditors[param.editorID];
 
-      } else if(typeof param.controlMessage == "undefined")
-      {
-          $("#notice").notify({"duration":2000,"class":"info","html":"<i class='fa fa-info-circle'></i>Editor LEAVE document..."});
-          $("#"+param.editorID).remove();
-      }
+      if(param.editorID != window.editorID)
+         delete window.activeEditors[param.editorID];
+
+      $("#notice").notify({"duration":2000,"class":"info","html":"<i class='fa fa-info-circle'></i>Editor LEAVE document..."});
+      $("#"+param.editorID).remove();
+
 
  };
 
  window.viewFn['ping'] = function(param){
-     if(typeof param.controlMessage != "undefined"){
-         if(param.editorID != window.editorID)
-           window.activeEditors[param.editorID]=1;
-     }
-     else if(param.editorID != window.editorID && typeof $("#" + param.editorID).get(0) == "undefined")
+
+
+     if(param.editorID != window.editorID)
+        window.activeEditors[param.editorID]=1;
+
+     var project = $("#project").attr("_projectName");
+     var file = $("#file").attr("_fileName");
+
+     if(param.project == project && param.file==file)
      {
-       $("#notice").notify({"duration":2000,"class":"info","html":"<i class='fa fa-info-circle'></i>Discovering editor already in document..."});
-       window.addCaret(0,0,null,param.editorID,param.editorColor);
+         console.log($("#" + param.editorID).get(0));
+         if (typeof $("#" + param.editorID).get(0) == "undefined")
+         {
+             console.log("dentro");
+             $("#notice").notify({"duration":2000,"class":"info","html":"<i class='fa fa-info-circle'></i>Discovering editor already in document..."});
+             window.addCaret(0, 0, null, param.editorID, param.editorColor);
+         }
+
      }
  };
 
@@ -454,20 +465,25 @@ function init(){
      modal.find(".referendumDescription").each(function(idx,obj){$(obj).remove();});
 
      modal.find("#refDescr").append("<p class=\"referendumDescription\" id=\"referendumSubject\">Would you like to remove "+param.targetName + " for prject " + param.containerName +"</p>");
-     modal.find("#refStat").remove();
-     modal.find("#refResult").remove();
+     modal.find("#refStat").hide();
+     modal.find("#refResult").hide();
 
      var vote ={"sender":param.sender,"fn":"execVote","action":"vote"};
 
+     modal.find("#success").unbind('click');
+     modal.find("#fail").unbind('click');
+
      modal.find("#success").text("Agree").show().on('click',function(){
          vote["vote"] = 1;
+         modal.modal('hide');
          stream.send(JSON.stringify(vote))
-         modal.modal('toggle');
+
      });
      modal.find("#fail").text("Not Agree").show().on('click',function(){
          vote["vote"]=0;
+         modal.modal('hide');
          stream.send(JSON.stringify(vote))
-         modal.modal('toggle');
+
      });
 
 
@@ -486,19 +502,29 @@ function init(){
      var modal = $("#emptyModal");
 
      if(parseInt(param.value) == 1)
-         modal.find("#acceptReferendum").text(parseInt(modal.find("#acceptReferendum").text())+1);
-     else
+     {
+         window.acceptRef += 1;
+         modal.find("#acceptReferendum").text(window.acceptRef);
+     }
+     else{
+         window.declineRef += 1;
          modal.find("#discardReferendum").text(parseInt(modal.find("#discardReferendum").text())+1);
+     }
 
-     if(parseInt(modal.find("#acceptReferendum").text())>= parseInt(modal.find("#qourum").text()))
+
+     if(acceptRef >= quorum)
          modal.find("#success").show();
 
-     if(parseInt(parseInt(modal.find("#acceptReferendum").text()) + parseInt(modal.find("#discardReferendum").text())) == Object.keys(window.activeEditors).length)
+     if((parseInt(acceptRef) + parseInt(declineRef)) == Object.keys(window.activeEditors).length)
      {
          modal.find("#spinner").hide();
-         if(parseInt(modal.find("#acceptReferendum").text())>= parseInt(modal.find("#quorum").text()))
+         if(parseInt(acceptRef) >= parseInt(quorum))
          {
              modal.find("#refResult").append("<p><i class=\"fa-2x fa fa-check\" aria-hidden=\"true\"></i> Referndum Closed: ACCEPTED</p><p>Your request was accepted by other editors. If you wish you can continue with the deletion procedure</p>")
+
+             modal.find("#success").unbind('click');
+             modal.find("#fail").unbind('click');
+
              modal.find("#success").on("click",function(){
 
                  $.ajax({
@@ -512,7 +538,7 @@ function init(){
                      },
                      success: function() {
 
-                         modal.modal("toggle");
+                         modal.modal("hide");
                          //alert("File rimosso correttamente");
 
                      }
@@ -520,11 +546,19 @@ function init(){
 
              }).show();
 
-         }
-         else{
+         }else{
              modal.find("#refResult").append("<p><i class=\"fa-2x fa fa-times\" aria-hidden=\"true\"></i> Referndum Closed: DECLINED</p><p>Your request was declined by other editors. If you wish you can try a new referendum</p>")
          }
-         modal.find("#fail").show();
+
+         modal.find("#fail").html("Close").on('click',function(){
+             window.quorum = 0;
+             window.acceptRef = 0;
+             window.declineRef = 0;
+
+             $("#emptyModal").modal("hide");
+
+         }).show();
+
 
 
      }
@@ -572,21 +606,30 @@ function init(){
 
 function compila()
 {
+    console.log("compiling");
     $("#notice").notify({"duration":2000,"class":"info","html":"<i class='fa fa-info-circle'></i>Project compilation started..."});
-    $("#downlaod").hide();
+    $("#download").hide();
     $("#collapse1").collapse('show');
     $("#progressBar").css("width","0%");
     $("#console").find("p").each(function(idx,obj){$(obj).remove();});
     stream.send(JSON.stringify({"action":"compile"}));
 }
 
-$(document).ready(function(){
+window.setupConnection = function() {
 
-    init();
+
 
     ws = new WebSocket('ws://'+getLocation(window.location.href).host+'/ws');
+
     stream = {
-        send: function(msg){ ws.send(msg);},
+        send: function(msg){ if(ws.readyState == 3)
+                             {
+                                 $("#notice").notify({"duration":0,"class":"danger","html":"<i class=\"fa fa-exclamation-triangle fa-3x\"></i><div style=\"display: inline; margin-left: 5px; position: relative; top: -10px;\">This project is marked as post delayed. Will be deleted on logout! All changes will be lost. You will be redirect to the home in 10 secs</div>"});
+                                 location.reload(true);
+                             }
+                             else
+                                   ws.send(msg);
+                           },
         bye: function(){
             ws.send(JSON.stringify({"editorID":window.editorID,
                 "action":"leave",
@@ -601,7 +644,11 @@ $(document).ready(function(){
     };
 
     ws.onopen = function(){
-        ws.send(JSON.stringify({"editorID":window.editorID,
+
+        $("#notice").hide();
+
+        ws.send(JSON.stringify({
+            "editorID":window.editorID,
             "action":"join",
             "editorColor":window.editorColor,
             "project":$("#project").attr("_projectName"),
@@ -609,6 +656,14 @@ $(document).ready(function(){
         );
 
     };
+
+}
+
+$(document).ready(function(){
+
+    init();
+    setupConnection();
+
 
   $("#editorColor").css("background-color",window.editorColor);
   $("#page").documentize(stream.send);

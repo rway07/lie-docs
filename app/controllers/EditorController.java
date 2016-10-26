@@ -55,7 +55,7 @@ public class EditorController extends Controller {
 
             int id = (int)data.get(0).get("id");
 
-            projectActor.tell(new DistributedPubSubMediator.Publish(projectName,new controllerMessage()
+            projectActor.tell(new DistributedPubSubMediator.Publish(projectName,new controllerMessage(projectName + " " + fileName)
                     .setAction(controllerMessage.actionEnum.ADD)
                     .setTarget(controllerMessage.targetEnum.FILE)
                     .setTargetID(id)
@@ -85,7 +85,7 @@ public class EditorController extends Controller {
 
         HashMap f = (HashMap) (((ArrayList)dbUtil.query("select project from files where id = " + fileID)).get(0));
 
-        projectActor.tell(new DistributedPubSubMediator.Publish(project,new controllerMessage()
+        projectActor.tell(new DistributedPubSubMediator.Publish(project,new controllerMessage(project + " " + file)
                 .setAction(controllerMessage.actionEnum.DELETE)
                 .setTarget(controllerMessage.targetEnum.FILE)
                 .setTargetID(fileID)
@@ -102,11 +102,12 @@ public class EditorController extends Controller {
         DynamicForm form = Form.form().bindFromRequest();
         int fileID = Integer.parseInt(form.data().get("fileID"));
         String project = form.data().get("project");
+        String file = form.data().get("file");
 
         int result = dbUtil.executeUpdate("delete from files where id = " + fileID + ";");
 
         if (result != 0) {
-            projectActor.tell(new DistributedPubSubMediator.Publish(project,new controllerMessage()
+            projectActor.tell(new DistributedPubSubMediator.Publish(project,new controllerMessage(project + " " + file)
                     .setAction(controllerMessage.actionEnum.DELETE)
                     .setTarget(controllerMessage.targetEnum.FILE)
                     .setTargetID(fileID)

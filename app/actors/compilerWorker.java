@@ -36,6 +36,8 @@ public class compilerWorker extends UntypedActor{
         // gcc -o prog_name *.o
         if(message instanceof cProject) {
 
+            Logger.error("WORKER: RICEVUTO PROGETTO");
+
             String tmpDir = fileSystem.getTempDir();
             String workingDir = tmpDir + "/"+ getSelf().path().name() + "/" + ((cProject) message).getProjectName();
             File cwd = fileSystem.getWorkingDir(getSelf().path().name() + "/" + ((cProject) message).getProjectName());
@@ -67,6 +69,8 @@ public class compilerWorker extends UntypedActor{
                                        .setMsgType(updateCompile.type.Info)
                                        .setTotalSteps(0)
                                        .setCurrentStep(0),getSelf());
+
+            Logger.error("WORKER: INIZIO COMPILAZIONE");
 
             Runtime rt = Runtime.getRuntime();
             Process proc = rt.exec("gcc -c " + workingDir+"/"+sourceFileName + " -o " + workingDir+"/"+sourceFileName.substring(0,sourceFileName.length()-2) + ".o",null,cwd);
@@ -121,6 +125,7 @@ public class compilerWorker extends UntypedActor{
                            .setProjectName(((cProject) message).getProjectName())
                            .setObjName(sourceFileName.substring(0,sourceFileName.length()-2) + ".o"),getSelf());
             }
+            Logger.error("WORKER: COMPILAZIONE FINITA");
         }
 
 

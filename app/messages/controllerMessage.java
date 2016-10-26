@@ -21,8 +21,18 @@ public class controllerMessage implements Serializable {
     private boolean forwarded = false;
     private boolean ack = false;
 
+    public String getRoom() {
+        return room;
+    }
+
+    private String room;
+
     public boolean isAck() {
         return ack;
+    }
+
+    public controllerMessage(String room){
+        this.room = room;
     }
 
     public controllerMessage setAck(boolean ack) {

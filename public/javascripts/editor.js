@@ -35,27 +35,35 @@ window.fileDeleteEventListener= function(fileID,fileName) {
         modal.find("#refDescr").append("<p class=\"referendumDescription\">Since it may be an harmfull action, I have announced a new referedum among all active editors.</p>");
         modal.find("#refDescr").append("<p class=\"referendumDescription\">If the qourum will be get you can proceed otherwise you should ask new votation</p>");
 
+
+        window.acceptRef = 0;
+        window.declineRef = 0;
+        window.quorum = Math.ceil(parseInt(active)/2);
+
+        modal.find("#refStat").show();
         modal.find("#activeEditors").text(parseInt(active));
-        modal.find("#quorum").text(Math.ceil(parseInt(active)/2));
+        modal.find("#quorum").text(quorum);
 
-        modal.find("#acceptReferendum").text(0);
-        modal.find("#discardReferendum").text(0);
 
-        modal.find("#refResult").html("");
+        modal.find("#acceptReferendum").text(acceptRef);
+        modal.find("#discardReferendum").text(declineRef);
 
-        modal.find("#fail").hide();
+        modal.find("#refResult").html("").show();
+
+        modal.find("#fail").unbind("click").on('click',function(){modal.modal('hide')}).text("Close").hide();
 
         if(active > 0)
           modal.find("#success").hide();
         else
         {
-            modal.find("#success").on("click",function(){
+            modal.find("#success").unbind('click').on("click",function(){
 
                 $.ajax({
                     url: "/file/execDelete",
                     type: "POST",
                     data: {"fileID":parseInt(modal.find("#fileID").attr("fileid")),
-                        "project":$("#project").attr("_projectname")},
+                           "project":$("#project").attr("_projectname"),
+                           "file" : fileName},
                     error: function(data) {
                         alert("Error removing the file!");
                         modal.modal("hide");

@@ -8,6 +8,10 @@ import scala.Serializable;
  */
 public class referendumMessage extends controllerMessage implements Serializable {
 
+    public referendumMessage()
+    {
+        super("");
+    }
     private ActorRef sender;
 
     public ActorRef getSender() {

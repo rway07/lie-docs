@@ -53,6 +53,7 @@ public class dbActor extends UntypedActor {
 
         if(msg instanceof deleteProject)
         {
+            Logger.info("MI UCCIDO");
             deleteDelayed.put(((deleteProject)msg).getId(),((deleteProject)msg));
             roomRouter.tell(new DistributedPubSubMediator.Publish(((deleteProject)msg).getProject(),msg),getSelf());
             context().stop(getSelf());
@@ -60,6 +61,7 @@ public class dbActor extends UntypedActor {
         }
         else if(msg instanceof compileMessage)
         {
+            Logger.error("DB: RETRIVE PROJECT");
             cProject p = new cProject();
             p = new cProject();
 
@@ -82,6 +84,7 @@ public class dbActor extends UntypedActor {
             ((compileMessage) msg).setCProject(p);
             getSender().tell(msg,getSelf());
 
+            Logger.error("DB: PROJECT RETRIVED");
             return;
         }
 

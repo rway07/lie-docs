@@ -189,11 +189,14 @@ public class compilerManager extends UntypedActor{
                             .setCurrentStep(totaleObject+1),getSelf());
 
                 }
+
+                Logger.error("MANAGER: LINKIING FINITO");
             }
 
         }
         else if(message instanceof compileMessage)
         {
+            Logger.error("MANAGER: RICEVUTO COMPILO");
             startTime = System.currentTimeMillis();
             workerRouter.tell(akka.routing.GetRoutees.getInstance(),getSelf());
             db.tell(message,getSelf());
