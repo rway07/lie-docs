@@ -671,11 +671,12 @@ $(document).ready(function(){
 
 
     $('#collapse1').on('shown.bs.collapse', function () {
-        $(".glyphicon").removeClass("glyphicon-collapse-down").addClass("glyphicon-collapse-up");
+
+        $(".glyphicon").removeClass("glyphicon-collapse-up").addClass("glyphicon-collapse-down");
     });
 
     $('#collapse1').on('hidden.bs.collapse', function () {
-        $(".glyphicon").removeClass("glyphicon-collapse-up").addClass("glyphicon-collapse-down");
+        $(".glyphicon").removeClass("glyphicon-collapse-down").addClass("glyphicon-collapse-up");
     });
 
   stream.registerCallback(exec);
