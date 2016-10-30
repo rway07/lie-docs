@@ -42,6 +42,26 @@ public class fileSystem {
         return cwd;
     }
 
+    public static BufferedWriter bufferedWriter(String file){
+
+        File f = new File(file);
+        if(f.exists())
+            f.delete();
+
+        try{
+            f.createNewFile();
+            FileWriter fw = new FileWriter(f.getAbsoluteFile());
+            BufferedWriter bw = new BufferedWriter(fw);
+
+            return bw;
+
+        }catch(IOException e){Logger.error("ERORR CREAZIONE FILE: " + e.getMessage());}
+
+        return null;
+
+
+    }
+
     public static void writeText(String path,String content){
         try{
         PrintWriter f = new PrintWriter(path,"UTF-8");

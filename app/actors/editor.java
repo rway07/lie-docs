@@ -44,6 +44,7 @@ public class editor extends UntypedActor {
     public editor(ActorRef out) {
 
         this.router =  DistributedPubSub.get(system).mediator();
+        Logger.warn(router.toString());
         this.socket = out;
 
     }

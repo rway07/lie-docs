@@ -4,18 +4,26 @@ import akka.actor.ActorRef;
 import akka.actor.Props;
 import akka.actor.UntypedActor;
 import akka.cluster.pubsub.DistributedPubSubMediator;
+import akka.dispatch.sysmsg.SystemMessage;
 import akka.dispatch.sysmsg.Terminate;
 import messages.compileMessage;
 import messages.deleteProject;
 import play.Logger;
+import play.api.Play;
 import utils.cProject;
 import utils.dbUtil;
+import utils.fileSystem;
 import utils.jsonUtil;
 import model.*;
 
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 
 /**
@@ -31,8 +39,20 @@ public class dbActor extends UntypedActor {
     private ActorRef roomRouter= null;
     private HashMap<Integer,deleteProject> deleteDelayed = new HashMap<Integer,deleteProject>();
 
+    private long startTime = 0;
+    private long cmdStart = 0;
+
+    private FileWriter f = null;
+
     public dbActor(ActorRef router)
     {
+        startTime = System.currentTimeMillis();
+        try {
+            f = new FileWriter(Play.current().getFile("/public/logs/log.log"),true); //fileSystem.bufferedWriter(Play.current().path().toString() + "/public/logs/" + include.group(1) + ".log");
+        }catch(IOException e) {
+            Logger.error(e.getMessage());
+        }
+
         roomRouter = router;
     }
     private long messages = 0;
@@ -40,6 +60,14 @@ public class dbActor extends UntypedActor {
     @Override
     public void postStop()
     {
+
+        try{
+            f.flush();
+            f.close();
+        }catch(IOException e) {
+            Logger.error("IMPOSSIBILE CHIUDERE IL FILE");
+        }
+
 
         Iterator idp = deleteDelayed.keySet().iterator();
 
@@ -87,7 +115,7 @@ public class dbActor extends UntypedActor {
             return;
         }
 
-        long starTime = System.currentTimeMillis();
+       cmdStart = System.currentTimeMillis();
 
         jsonUtil m = new jsonUtil((String)msg);
         jsonUtil resp = new jsonUtil("");
@@ -162,7 +190,13 @@ public class dbActor extends UntypedActor {
 
             }
         }
-        Logger.debug("dbActor Time: " + (System.currentTimeMillis() - starTime) + " messages: " + ++messages);
+        try{
+            f.write(new Long(System.currentTimeMillis() -cmdStart).toString() + "\t " + messages++ +"\n");
+            f.flush();
+        } catch(IOException e)
+        {
+            Logger.error("IMPOSSIBILE SCRIVERE IL FILE");
+        }
         getSender().tell(resp.toString(),getSelf());
     }
 
