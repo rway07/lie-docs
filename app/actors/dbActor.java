@@ -48,7 +48,7 @@ public class dbActor extends UntypedActor {
     {
         startTime = System.currentTimeMillis();
         try {
-            f = new FileWriter(Play.current().getFile("/public/logs/log.log"),true); //fileSystem.bufferedWriter(Play.current().path().toString() + "/public/logs/" + include.group(1) + ".log");
+            f = new FileWriter("/tmp/log.log",true); //fileSystem.bufferedWriter(Play.current().path().toString() + "/public/logs/" + include.group(1) + ".log");
         }catch(IOException e) {
             Logger.error(e.getMessage());
         }
