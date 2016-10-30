@@ -43,6 +43,10 @@ public class dbUtil {
             try {
                 Statement s = c.createStatement();
                 r = s.executeUpdate(query);
+
+                if(r == 0)
+                    throw new SQLException("affected row = 0");
+
                 c.close();
                 return r;
             } catch (SQLException e) {
