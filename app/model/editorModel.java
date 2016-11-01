@@ -172,7 +172,7 @@ public class editorModel {
 
         }catch(SQLException e)
         {
-            Logger.error(e.getMessage());
+            Logger.error("*******************************************************************************************************" + e.getMessage());
         }
 
 
