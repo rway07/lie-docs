@@ -8,6 +8,8 @@ function init(){
          stream.bye();
     };
 
+ window.ping = [];
+ window.opened=false;
  window.row=0;
  window.col=0;
  window.editorID = String.prototype.makeid(10);
@@ -103,10 +105,21 @@ function init(){
  };
  window.min = function(a,b){return (a<=b)?a:b;};
 
- window.appendEmptyTextNode = function(row)
+window.appendEmptyTextNode = function(row)
  {
    var currRow = $('tr:eq('+(parseInt(row))+')').get(0);
    var domTD = $(currRow).children("td").get(0);
+   
+   if(typeof domTD == "undefined")
+   {
+     $(currRow).html("<td contenteditable=\"true\"></td>");
+     domTD = $(currRow).children("td").get(0);
+   }
+ 
+   if(typeof domTD == "undefined")
+     console.log("bastardo"); 
+
+   //return $(currRow).children("td").contents();
    var text = document.createTextNode("");
    domTD.appendChild(text);
 
@@ -163,6 +176,13 @@ function init(){
                .contents()
                .filter(function(){return this.nodeType == 3 && this.nodeValue == "";})
                .each(function(idx,obj){$(obj).remove();});
+
+
+    console.log($(currRow).children("td").contents());
+    if($(currRow).children("td").text() == "")
+      $(currRow).children("td").append(document.createTextNode(""));          
+                             
+
  };
  window.addCaret = function(row,col,caret,id,color){
       var currTextNode = null;
@@ -210,7 +230,6 @@ function init(){
 
  window.viewFn['open'] = function (param) {
 
-
      $(window.documentized).find("tr").each(function(idx,obj){
          $(obj).remove();
 
@@ -219,14 +238,25 @@ function init(){
      for(var i = 0; i < param.rows.length; i++){
         var row = $.parseHTML(window.elementRow);
         $(row).attr("_idx",param.rows[i].idx);
-        $(row).children("td").text(param.rows[i].str);
+        if(param.rows[i].str != "")
+          $(row).children("td").text(param.rows[i].str);
+        else
+          $(row).children("td").text("");
+
         $(window.documentized).append(row);
      }
 
      $(window.documentized).find("td").on('keydown keyup mouseup',function (e){$.fn.fn(e,stream.send);});
      $(window.documentized).find("td").on('keypress',function (e){$.fn.streamChar(e,stream.send);});
+  
+     window.opened = true;
 
+     for(var i = 0; i < window.ping.length; i++)
+        window.viewFn['ping'](window.ping[i]);
 
+     
+     window.ping = [];
+     console.log(window.ping);
  };
  window.viewFn['execEnter1'] = function(param){
 
@@ -241,13 +271,18 @@ function init(){
 
     //update real caret
     if((window.row == param.r && window.col >= param.c) || window.row > param.r){
-      window.col = window.subOrZero(window.col,parseInt(param.c));
+      if(window.row == param.r)
+         window.col = 0;//window.subOrZero(window.col,parseInt(param.c));
       window.row++;
     }
     //update virtual carets
     for(var i=0; i<restoreCaret.length;i++){
       if((restoreCaret[i].row == param.r && restoreCaret[i].index >= param.c) || restoreCaret[i].row > param.r){
-        restoreCaret[i].index = window.subOrZero(restoreCaret[i].index,parseInt(param.c));
+        
+        if(restoreCaret[i].row == param.r)
+          restoreCaret[i].index = 0;
+                
+        //restoreCaret[i].index = window.subOrZero(restoreCaret[i].index,parseInt(param.c));
         restoreCaret[i].row++;
       }
     }
@@ -333,14 +368,18 @@ function init(){
 
       //update real caret
       if((window.row == param.r && window.col >= param.c) || window.row > param.r){
-            window.col =(parseInt(window.row) == parseInt(param.r))?window.col:currText.length;
+            if(parseInt(window.row) == parseInt(param.r))
+              window.col = currText.length;
+            //window.col =(parseInt(window.row) == parseInt(param.r))?window.col:currText.length;
             window.row = (parseInt(window.row) == parseInt(param.r))?window.row:window.subOrZero(window.row,1);
       }
 
       //update virtual carets
       for(var i=0; i<restoreCaret.length;i++){
             if((restoreCaret[i].row == param.r && restoreCaret[i].index >= param.c) || restoreCaret[i].row > param.r){
-              restoreCaret[i].index = (parseInt(restoreCaret[i].row) == parseInt(param.r))?restoreCaret[i].index:currText.length;
+              if(parseInt(restoreCaret[i].row) == parseInt(param.r))
+                restoreCaret[i].index = currText.length;  
+              //restoreCaret[i].index = (parseInt(restoreCaret[i].row) == parseInt(param.r))?restoreCaret[i].index:currText.length;
               restoreCaret[i].row = (parseInt(restoreCaret[i].row) == parseInt(param.r))?restoreCaret[i].index:window.subOrZero(restoreCaret[i].index,1);
             }
       }
@@ -389,7 +428,11 @@ function init(){
                      "file": file,
                      "action": "ping",
                      "editorID": window.editorID,
-                     "editorColor": window.editorColor};
+                     "editorColor": window.editorColor,
+                     "row":window.row,
+                     "col":window.col};
+
+     console.log("invio ping"); 
 
      if(param.project == project && param.file==file)
      {
@@ -420,20 +463,28 @@ function init(){
  window.viewFn['ping'] = function(param){
 
 
+     if(!window.opened){
+       console.log("************* pusho ping ******************+");
+       window.ping.push(param);
+       console.log(window.ping.push(param));
+       return;
+     }  
+
      if(param.editorID != window.editorID)
         window.activeEditors[param.editorID]=1;
 
      var project = $("#project").attr("_projectName");
      var file = $("#file").attr("_fileName");
 
+     console.log("ricevo ping");
+     console.log(param);
+
      if(param.project == project && param.file==file)
      {
-         console.log($("#" + param.editorID).get(0));
          if (typeof $("#" + param.editorID).get(0) == "undefined")
          {
-             console.log("dentro");
              $("#notice").notify({"duration":2000,"class":"info","html":"<i class='fa fa-info-circle'></i>Discovering editor already in document..."});
-             window.addCaret(0, 0, null, param.editorID, param.editorColor);
+             window.addCaret(param.row, param.col, null, param.editorID, param.editorColor);
          }
 
      }
@@ -527,6 +578,7 @@ function init(){
 
              modal.find("#success").on("click",function(){
 
+                 console.log("proceeed delete");
                  $.ajax({
                      url: "/file/execDelete",
                      type: "POST",
@@ -634,7 +686,8 @@ window.setupConnection = function() {
             ws.send(JSON.stringify({"editorID":window.editorID,
                 "action":"leave",
                 "project":$("#project").attr("_projectName"),
-                "file":$("#file").attr("_fileName")
+                "file":$("#file").attr("_fileName"),
+                "fn":""
             }));
             ws.close();
         },
@@ -697,8 +750,8 @@ var exec = function(resp){
            $(authorCaret).remove();
            window.addCaret(data.r,data.c,authorCaret.get(0),data.author);
         }
-        var currRow = $($('tr:eq('+(parseInt(data.r))+')').get(0));
-        $(currRow).focusEditable(parseInt(data.c));
+        var currRow = $($('tr:eq('+(parseInt(window.row))+')').get(0));
+        $(currRow).focusEditable(parseInt(window.col));
         break;
       }
       default:{
@@ -931,7 +984,9 @@ $.fn.fn = function(e,notifyChange){
             }
             else
             {
-              if(!currRow.is(":first-child"))
+              //console.log("sono qui");
+              console.log($(currRow.get(0)).is(":first-child"));
+              if(!$(currRow.get(0)).is(":first-child"))
               {
                 var paramBackspace = {
                     fn: "execBackspace",

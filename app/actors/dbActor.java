@@ -1,6 +1,7 @@
 package actors;
 
 import akka.actor.ActorRef;
+import akka.actor.Identify;
 import akka.actor.Props;
 import akka.actor.UntypedActor;
 import akka.cluster.pubsub.DistributedPubSubMediator;
@@ -79,6 +80,7 @@ public class dbActor extends UntypedActor {
 
     @Override
     public void onReceive(Object msg) {
+
 
         if(msg instanceof deleteProject)
         {

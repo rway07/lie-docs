@@ -44,7 +44,7 @@ public class editor extends UntypedActor {
     public editor(ActorRef out) {
 
         this.router =  DistributedPubSub.get(system).mediator();
-        Logger.warn(router.toString());
+        //Logger.warn(router.toString());
         this.socket = out;
 
     }
@@ -226,25 +226,41 @@ public class editor extends UntypedActor {
                                 this.room = project + " " + file;
 
                                 ActorSelection sel = system.actorSelection("akka://application/user/"+"DB"+project);
-                                Future<ActorRef> future = sel.resolveOne(new Timeout(5, TimeUnit.SECONDS));
+                                Future<ActorRef> future = sel.resolveOne(new Timeout(1, TimeUnit.SECONDS));
 
                                 future.onComplete(new OnComplete<ActorRef>() {
                                     @Override
                                     public void onComplete(Throwable excp, ActorRef child) throws Throwable {
                                         if (excp != null) {
-                                            db = system.actorOf(Props.create(dbActor.class,router),"DB"+project);
+
+                                            try{
+                                                db = system.actorOf(Props.create(dbActor.class,router),"DB"+project);
+                                            } catch(Exception e)
+                                            {
+                                                db = system.actorFor("akka://application/user/"+"DB"+project);
+                                                Logger.error("****************** ATTORE ESISTENTE *******************: " + db.toString());
+
+                                            }
+
                                         } else {
                                             db = child;
                                         }
 
+                                        Logger.error("********** DIO CANE FUTURE COMPLETE ***************");
                                         ActorSelection s = system.actorSelection("akka://application/user/compilerManager" + project);
-                                        Future<ActorRef> f = s.resolveOne(new Timeout(5, TimeUnit.SECONDS));
+                                        Future<ActorRef> f = s.resolveOne(new Timeout(1, TimeUnit.SECONDS));
 
                                         f.onComplete(new OnComplete<ActorRef>() {
                                             @Override
                                             public void onComplete(Throwable excp, ActorRef child) throws Throwable {
                                                 if (excp != null) {
-                                                    compilerManager = system.actorOf(Props.create(compilerManager.class,project,db),"compilerManager" + project);
+                                                    try{
+                                                        compilerManager = system.actorOf(Props.create(compilerManager.class,project,db),"compilerManager" + project);
+                                                    } catch(Exception e)
+                                                    {
+                                                        compilerManager = system.actorFor("akka://application/user/compilerManager" + project);
+                                                    }
+
                                                 } else {
                                                     compilerManager = child;
                                                 }
@@ -287,7 +303,7 @@ public class editor extends UntypedActor {
                         }
                         case "leave":
                         {
-                            Logger.info("LEAVE EDITOR : leaving room {}",this.room);
+                            //Logger.info("LEAVE EDITOR : leaving room {}",this.room);
                             jsonUtil msg = new jsonUtil("");
                             msg.put("fn","leave");
                             msg.put("editorID",this.editorID);
@@ -307,6 +323,10 @@ public class editor extends UntypedActor {
                             msg.put("editorColor",this.editorColor);
                             msg.put("project",project);
                             msg.put("file",file);
+                            msg.put("row",jsonMsg.get("row"));
+                            msg.put("col",jsonMsg.get("col"));
+
+
                             router.tell(new DistributedPubSubMediator.Publish(project, new documentChanges(msg.toString())),getSelf());
                             break;
 
@@ -364,6 +384,7 @@ public class editor extends UntypedActor {
                                 f.onSuccess(new OnSuccess() {
                                     @Override
                                     public void onSuccess(Object result) throws Throwable {
+                                        Logger.error("sono qui");
                                         router.tell(new DistributedPubSubMediator.Publish(room, new documentChanges(jsonMsg.toString())), getSelf());
 
                                     }

@@ -50,7 +50,7 @@ window.fileDeleteEventListener= function(fileID,fileName) {
 
         modal.find("#refResult").html("").show();
 
-        modal.find("#fail").unbind("click").on('click',function(){modal.modal('hide')}).text("Close").hide();
+        modal.find("#fail").unbind("click").on('click',function(){modal.modal('hide')}).text("Close").show();
 
         if(active > 0)
           modal.find("#success").hide();

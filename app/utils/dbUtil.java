@@ -24,73 +24,62 @@ public class dbUtil {
     private static DB db;
 
 
-    public static DB getDB(){ return db;}
+    public static DB getDB() {
+        return db;
+    }
 
     public static Object query(String sql) {
-        Pattern p = Pattern.compile("^\\s*SELECT.*",Pattern.CASE_INSENSITIVE);
-        if(p.matcher(sql).matches()) {
-            return (Object)dbUtil.executeQuery(sql);
+        Pattern p = Pattern.compile("^\\s*SELECT.*", Pattern.CASE_INSENSITIVE);
+        if (p.matcher(sql).matches()) {
+            return (Object) dbUtil.executeQuery(sql);
         } else {
             //insert , update, replace delete
-            return (Object)dbUtil.executeUpdate(sql);
+            return (Object) dbUtil.executeUpdate(sql);
         }
     }
 
     public static int executeUpdate(String query) {
         Connection c = db.getConnection();
         int r = 0;
-        while(true){
-            try {
-                Statement s = c.createStatement();
-                r = s.executeUpdate(query);
 
-                if(r == 0)
-                    throw new SQLException("affected row = 0");
+        try {
+            Statement s = c.createStatement();
+            r = s.executeUpdate(query);
+            c.close();
+            return r;
+        } catch (SQLException e) {
+            Logger.error(e.getMessage());
 
-                c.close();
-                return r;
-            } catch (SQLException e) {
-                try{
-                    Thread.sleep(3);
-                }catch(InterruptedException f){
-                    // Logger.error("interrupted exception execute update 0:" + e.getMessage());
-                }
-            }
         }
+
+        return 0;
     }
 
     public static ArrayList executeQuery(String query) {
         Connection c = db.getConnection();
         ResultSet rs;
         ArrayList<HashMap<String, Object>> list = new ArrayList<HashMap<String, Object>>();
+        try {
+            Statement s = c.createStatement();
+            rs = s.executeQuery(query);
 
-        while(true){
-            try {
-                Statement s = c.createStatement();
-                rs = s.executeQuery(query);
-
-                ResultSetMetaData md = rs.getMetaData();
-                int columns = md.getColumnCount();
-                while (rs.next()){
-                    HashMap<String, Object> row = new HashMap<String, Object>(columns);
-                    for(int i=1; i<=columns; ++i){
-                        row.put(md.getColumnLabel(i), rs.getObject(i));
-                    }
-                    list.add(row);
+            ResultSetMetaData md = rs.getMetaData();
+            int columns = md.getColumnCount();
+            while (rs.next()) {
+                HashMap<String, Object> row = new HashMap<String, Object>(columns);
+                for (int i = 1; i <= columns; ++i) {
+                    row.put(md.getColumnLabel(i), rs.getObject(i));
                 }
-                c.close();
-                return list;
-
-            } catch (Exception e) {
-                try{
-                    Thread.sleep(3);
-                }catch(InterruptedException f){
-                    // Logger.error("interrupted exception execute update 0:" + e.getMessage());
-                }
-                Logger.error("ERRORE: " + e.getMessage() + " - " + e.getCause());
+                list.add(row);
             }
+            c.close();
+            return list;
 
+        } catch (Exception e) {
+
+            Logger.error("ERRORE: " + e.getMessage() + " - " + e.getCause());
         }
-    }
 
+        return list;
+    }
 }

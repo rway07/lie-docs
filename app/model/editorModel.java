@@ -150,6 +150,8 @@ public class editorModel {
                     col_idx = (double)getChar(file,row, (int)chars-1).get("idx") + 1;
                 else
                     col_idx = (((double)getChar(file,row, col).get("idx") + (double)getChar(file,row, col-1).get("idx")) / 2);
+
+
                 break;
             }
         }
@@ -161,13 +163,24 @@ public class editorModel {
             sql.setDouble(2, col_idx);
             sql.setString(3, chr);
 
+            Logger.error("eseguo " + sql.toString());
+
             sql.executeUpdate();
-            sql = conn.prepareStatement("UPDATE `character` c, "+
-                    "(SELECT *,@curRank := @curRank + 1 AS rank FROM `character` c, (SELECT @curRank := 0) r where paragraph = ? ORDER BY  idx asc) r " +
-                    "SET c.idx = r.rank WHERE c.idx = r.idx and c.paragraph = r.paragraph and c.paragraph = ?;");
-            sql.setInt(1, paragraphID);
-            sql.setInt(2, paragraphID);
-            sql.executeUpdate();
+
+
+            ArrayList rs = (ArrayList)dbUtil.query("SELECT *,@curRank := @curRank + 1 AS rank FROM `character` d, (SELECT @curRank := 0) r where d.paragraph = " + paragraphID + " ORDER BY  idx asc;");
+            Logger.error("costruito: " + rs.size());
+            Iterator irs = rs.iterator();
+            HashMap myrow = null;
+
+            while(irs.hasNext())
+            {
+                myrow = (HashMap) irs.next();
+                String query = "update `character` set idx = " + (double)myrow.get("rank") + " where paragraph = " + paragraphID + " and id = " + (int)myrow.get("id");
+                Logger.error("eseguo: " + query);
+                dbUtil.query(query);
+            }
+
             conn.close();
 
         }catch(SQLException e)
@@ -190,7 +203,8 @@ public class editorModel {
             ret = new HashMap<>();
             ret.put("idx", 0.0);
         } else {
-            ret = (HashMap)chars.get(col);
+
+            ret = (HashMap)chars.get(Math.min(col,chars.size()-1));
         }
         return ret;
     }
