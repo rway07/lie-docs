@@ -116,8 +116,7 @@ window.appendEmptyTextNode = function(row)
      domTD = $(currRow).children("td").get(0);
    }
  
-   if(typeof domTD == "undefined")
-     console.log("bastardo"); 
+
 
    //return $(currRow).children("td").contents();
    var text = document.createTextNode("");
@@ -178,7 +177,7 @@ window.appendEmptyTextNode = function(row)
                .each(function(idx,obj){$(obj).remove();});
 
 
-    console.log($(currRow).children("td").contents());
+
     if($(currRow).children("td").text() == "")
       $(currRow).children("td").append(document.createTextNode(""));          
                              
@@ -256,7 +255,7 @@ window.appendEmptyTextNode = function(row)
 
      
      window.ping = [];
-     console.log(window.ping);
+
  };
  window.viewFn['execEnter1'] = function(param){
 
@@ -432,7 +431,7 @@ window.appendEmptyTextNode = function(row)
                      "row":window.row,
                      "col":window.col};
 
-     console.log("invio ping"); 
+
 
      if(param.project == project && param.file==file)
      {
@@ -464,9 +463,9 @@ window.appendEmptyTextNode = function(row)
 
 
      if(!window.opened){
-       console.log("************* pusho ping ******************+");
+
        window.ping.push(param);
-       console.log(window.ping.push(param));
+
        return;
      }  
 
@@ -475,9 +474,6 @@ window.appendEmptyTextNode = function(row)
 
      var project = $("#project").attr("_projectName");
      var file = $("#file").attr("_fileName");
-
-     console.log("ricevo ping");
-     console.log(param);
 
      if(param.project == project && param.file==file)
      {
@@ -578,7 +574,7 @@ window.appendEmptyTextNode = function(row)
 
              modal.find("#success").on("click",function(){
 
-                 console.log("proceeed delete");
+
                  $.ajax({
                      url: "/file/execDelete",
                      type: "POST",
@@ -647,7 +643,9 @@ window.appendEmptyTextNode = function(row)
 
      if((param.msgType == "Success" && param.sender=="MANAGER"))
      {
-         $("#download").attr("href","http://"+getLocation(window.location.href).host + "/compiled/" + $("#project").attr("_projectName")).show();
+         $("#download").attr("href","http://"+getLocation(window.location.href).host + "/compiled/" + $("#project").attr("_projectName"));
+         $("#download").show();
+         $("#run").show();
      }
 
      $("#console").append(elem).fadeIn(1000);
@@ -656,13 +654,23 @@ window.appendEmptyTextNode = function(row)
 
 };
 
+function run(){
+    $("#notice").notify({"duration":2000,"class":"info","html":"<i class='fa fa-info-circle'></i>Preparing for running..."});
+    $("#collapse1").collapse('show');
+    $("#progressBar").css("width","0%").hide();
+    $("#console").find("p").each(function(idx,obj){$(obj).remove();});
+
+    stream.send(JSON.stringify({"action":"run"}));
+}
+
 function compila()
 {
-    console.log("compiling");
+
     $("#notice").notify({"duration":2000,"class":"info","html":"<i class='fa fa-info-circle'></i>Project compilation started..."});
     $("#download").hide();
+    $("#run").hide();
     $("#collapse1").collapse('show');
-    $("#progressBar").css("width","0%");
+    $("#progressBar").css("width","0%").show();
     $("#console").find("p").each(function(idx,obj){$(obj).remove();});
     stream.send(JSON.stringify({"action":"compile"}));
 }
@@ -985,7 +993,7 @@ $.fn.fn = function(e,notifyChange){
             else
             {
               //console.log("sono qui");
-              console.log($(currRow.get(0)).is(":first-child"));
+
               if(!$(currRow.get(0)).is(":first-child"))
               {
                 var paramBackspace = {

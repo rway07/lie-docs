@@ -238,7 +238,7 @@ public class editor extends UntypedActor {
                                             } catch(Exception e)
                                             {
                                                 db = system.actorFor("akka://application/user/"+"DB"+project);
-                                                Logger.error("****************** ATTORE ESISTENTE *******************: " + db.toString());
+
 
                                             }
 
@@ -246,7 +246,7 @@ public class editor extends UntypedActor {
                                             db = child;
                                         }
 
-                                        Logger.error("********** DIO CANE FUTURE COMPLETE ***************");
+
                                         ActorSelection s = system.actorSelection("akka://application/user/compilerManager" + project);
                                         Future<ActorRef> f = s.resolveOne(new Timeout(1, TimeUnit.SECONDS));
 
@@ -350,6 +350,9 @@ public class editor extends UntypedActor {
                                 compilerManager.tell(new compileMessage().setSender(getSelf()).setProject(project),getSelf());
                                 break;
                             }
+                            case "run":{
+                                break;
+                            }
                             case "vote":{
                                 ActorSelection referendumOwner = getContext().system().actorSelection(jsonMsg.get("sender").toString());
                                 referendumOwner.tell(new updateReferendum().setObject(updateReferendum.enumObject.RANK).setValue(jsonMsg.get("vote")),getSelf());
@@ -384,7 +387,7 @@ public class editor extends UntypedActor {
                                 f.onSuccess(new OnSuccess() {
                                     @Override
                                     public void onSuccess(Object result) throws Throwable {
-                                        Logger.error("sono qui");
+
                                         router.tell(new DistributedPubSubMediator.Publish(room, new documentChanges(jsonMsg.toString())), getSelf());
 
                                     }

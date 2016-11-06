@@ -7,6 +7,7 @@ import akka.actor.UntypedActor;
 import akka.cluster.pubsub.DistributedPubSubMediator;
 import akka.dispatch.sysmsg.SystemMessage;
 import akka.dispatch.sysmsg.Terminate;
+import javassist.bytecode.stackmap.BasicBlock;
 import messages.compileMessage;
 import messages.deleteProject;
 import play.Logger;
@@ -124,27 +125,57 @@ public class dbActor extends UntypedActor {
 
         switch((String)m.get("action")){
             case "addChar": {
-                db.addChar((String)m.get("file"),(int)(long) m.get("r"),(int)(long) m.get("c"),(String)m.get("chr"));
+                try {
+                    db.addChar((String)m.get("file"),(int)(long) m.get("r"),(int)(long) m.get("c"),(String)m.get("chr"));
+                } catch (Exception e){
+                    Logger.error((String)msg);
+                }
+
+
                 break;
             }
             case "removeChar":{
-                db.removeChar((String)m.get("file"),(int)(long) m.get("r"),(int)(long) m.get("c"));
+                try {
+                    db.removeChar((String)m.get("file"),(int)(long) m.get("r"),(int)(long) m.get("c"));
+                } catch (Exception e){
+                    Logger.error((String)msg);
+                }
+
+
                 break;
             }
             case "removeRowBackspace":{
-                db.removeRowBackspace((String)m.get("file"),(int)(long) m.get("r"),(int)(long) m.get("c"));
+                try {
+                    db.removeRowBackspace((String)m.get("file"),(int)(long) m.get("r"),(int)(long) m.get("c"));
+                } catch (Exception e){
+                    Logger.error((String)msg);
+                }
                 break;
             }
             case "removeRowCanc":{
-                db.removeRowCanc((String)m.get("file"),(int)(long) m.get("r"),(int)(long) m.get("c"));
+                try {
+                    db.removeRowCanc((String)m.get("file"),(int)(long) m.get("r"),(int)(long) m.get("c"));
+                } catch (Exception e){
+                    Logger.error((String)msg);
+                }
+
                 break;
             }
             case "addRowMoveText":{
-               db.addRowMoveText((String)m.get("file"),(int)(long) m.get("r"),(int)(long) m.get("c"));
+                try {
+                    db.addRowMoveText((String)m.get("file"),(int)(long) m.get("r"),(int)(long) m.get("c"));
+                } catch (Exception e){
+                    Logger.error((String)msg);
+                }
                break;
             }
             case "addRowNoMoveText":{
-                db.addRowNoMoveText((String)m.get("file"),(int)(long) m.get("r"));
+                try {
+                    db.addRowNoMoveText((String)m.get("file"),(int)(long) m.get("r"));
+                } catch (Exception e){
+                    Logger.error((String)msg);
+                }
+
                 break;
             }
             case "init":{
