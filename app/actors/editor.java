@@ -97,6 +97,7 @@ public class editor extends UntypedActor {
                             ref.put("sender",msg.getSender().path().toString());
 
                             ref.put("fn", "execReferendum");
+                            Logger.error("dico referendum");
                             socket.tell(ref.toString(), getSelf());
                             return;
                         }
@@ -130,6 +131,7 @@ public class editor extends UntypedActor {
                                     referendumMessage ref = ((controllerMessage)message).toReferedumMessage();
                                     ref.setSender(getSelf()).setForwarded(false).setAuthor(editorID);
                                     router.tell(new DistributedPubSubMediator.Publish(project, ref),getSelf());
+                                    Logger.error("Ho indetto referendum");
                                     return;
                                 }
 
