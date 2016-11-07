@@ -79,7 +79,7 @@ window.fileDeleteEventListener= function(fileID,fileName) {
             }).show();
         }
 
-        modal.find("#success").text("Proceed Delete").hide();
+        modal.find("#success").text("Proceed Delete");
         modal.find("#fileID").attr("fileID", fileID);
         modal.modal("show");
 
