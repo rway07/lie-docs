@@ -5,9 +5,7 @@ import play.Logger;
 import utils.*;
 
 import java.lang.reflect.Array;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -158,29 +156,26 @@ public class editorModel {
 
         try{
             Connection conn = dbUtil.getDB().getConnection();
-            PreparedStatement sql = conn.prepareStatement("INSERT INTO `character` (paragraph, `idx`,`value`) VALUES (?,?,?)");
+            PreparedStatement sql = conn.prepareStatement("INSERT INTO `character` (paragraph, `idx`,`value`) VALUES (?,?,?)", Statement.RETURN_GENERATED_KEYS);
             sql.setInt(1, paragraphID);
             sql.setDouble(2, col_idx);
             sql.setString(3, chr);
-
-            Logger.error("eseguo " + sql.toString());
-
             sql.executeUpdate();
 
+            ResultSet rLast = sql.getGeneratedKeys();
+            rLast.next();
+            int lastID = rLast.getInt(1);
 
-            ArrayList rs = (ArrayList)dbUtil.query("SELECT *,@curRank := @curRank + 1 AS rank FROM `character` d, (SELECT @curRank := 0) r where d.paragraph = " + paragraphID + " ORDER BY  idx asc;");
-            Logger.error("costruito: " + rs.size());
-            Iterator irs = rs.iterator();
-            HashMap myrow = null;
+            String sqlNexts = "update `character` set idx = idx+1 where paragraph = ? and idx > ?";
+            PreparedStatement nexts = conn.prepareStatement(sqlNexts);
+            nexts.setInt(1,paragraphID);
+            nexts.setDouble(2,col_idx);
+            nexts.executeUpdate();
 
-            while(irs.hasNext())
-            {
-                myrow = (HashMap) irs.next();
-                String query = "update `character` set idx = " + (double)myrow.get("rank") + " where paragraph = " + paragraphID + " and id = " + (int)myrow.get("id");
-                Logger.error("eseguo: " + query);
-                dbUtil.query(query);
-            }
-
+            sql = conn.prepareStatement("update `character` set idx = ceil(idx) where id = ?");
+            sql.setInt(1,lastID);
+            sql.executeUpdate();
+            
             conn.close();
 
         }catch(SQLException e)
