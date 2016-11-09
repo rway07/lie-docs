@@ -97,6 +97,8 @@ public class compilerManager extends UntypedActor{
             objs = "";
             errors = false;
 
+            startTime = System.currentTimeMillis();
+
             while(sources.hasNext())
             {
                 missingCompiled++;
@@ -193,7 +195,7 @@ public class compilerManager extends UntypedActor{
         }
         else if(message instanceof compileMessage)
         {
-            startTime = System.currentTimeMillis();
+
             workerRouter.tell(akka.routing.GetRoutees.getInstance(),getSelf());
             db.tell(message,getSelf());
         }else if( message instanceof updateCompile)

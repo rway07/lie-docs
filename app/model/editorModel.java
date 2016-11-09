@@ -175,7 +175,7 @@ public class editorModel {
             sql = conn.prepareStatement("update `character` set idx = ceil(idx) where id = ?");
             sql.setInt(1,lastID);
             sql.executeUpdate();
-            
+
             conn.close();
 
         }catch(SQLException e)

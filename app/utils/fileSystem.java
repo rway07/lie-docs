@@ -13,7 +13,7 @@ import java.nio.file.Paths;
 public class fileSystem {
 
     public static String getTempDir() {
-        return System.getProperty("java.io.tmpdir");
+        return "/tmp";//System.getProperty("java.io.tmpdir");
     }
 
     public static void cleanWorkingDir(File path){
